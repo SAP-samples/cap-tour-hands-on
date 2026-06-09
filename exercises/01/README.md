@@ -10,8 +10,8 @@ Use the "base project"[<sup>1</sup>](#footnotes) as a starting point and create
 a new CAP project:
 
 ```bash
-rm -rf p01 \
-  && cp -a baseproj p01 \
+rm -rf proj-01 \
+  && cp -a baseproj proj-01 \
   && cd $_ \
   && tree
 ```
