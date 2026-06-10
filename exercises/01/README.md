@@ -471,9 +471,13 @@ HTTP/1.1 200 OK
 
 ## Further info
 
-- Did you know that `@requires: '<some-role>'` is just shorthand for `@restrict: [{grant:'*',to:'<some-role>'}]`?
-- Did you also know that `@readonly` is just shorthand for `@restrict: [{grant:'READ'}]`?
-- The [CAP-level Authorization](https://cap.cloud.sap/docs/guides/security/authorization) topic in Capire is definitely worth a visit.
+- Did you know that `@requires: '<some-role>'` is just shorthand for
+  `@restrict: [{grant:'*',to:'<some-role>'}]`?
+- Did you also know that `@readonly` is just shorthand for `@restrict:
+  [{grant:'READ'}]`?
+- The [CAP-level
+  Authorization](https://cap.cloud.sap/docs/guides/security/authorization)
+  topic in Capire is definitely worth a visit.
 
 ---
 
