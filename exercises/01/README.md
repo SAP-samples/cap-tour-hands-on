@@ -6,7 +6,7 @@ makes it easy to do the right things here.
 
 ## Start a new CAP project
 
-Use the "base project"[<sup>1</sup>](#footnotes) as a starting point and create
+👉 Use the "base project"[<sup>1</sup>](#footnotes) as a starting point and create
 a new CAP project:
 
 ```bash
@@ -32,6 +32,11 @@ This should emit something like this:
 
 4 directories, 6 files
 ```
+
+## Explore the service
+
+As it's our first time using the base project, take a minute to explore the
+service which is a very cut down version of Northwind.
 
 ---
 
