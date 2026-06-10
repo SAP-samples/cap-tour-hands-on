@@ -445,7 +445,7 @@ cds.requires.auth.users.alan.roles=["admin","finance"]
 
 ### Retry the write access
 
-👉 Let's now try again, as `alan`, who now has finance access:
+👉 Let's now try again, as `alan`, who [now has finance access](https://www.youtube.com/watch?v=SoAk7zBTrvo):
 
 ```bash
  curl -u alan: \
