@@ -174,6 +174,16 @@ When the emitter is loaded, e.g. in the context of another CAP service, the
 emitter's service definition is bootstrapped via this `index.cds` file which is
 automatically read[<sup>4</sup>](#footnotes).
 
+### Clean up unused files
+
+While normally we want all the content created by `cds init`, it's mostly superfluous here, so for neatness and clarity, let's remove what we don't need.
+
+Remove the unwanted content[<sup>5</sup>](#footnotes):
+
+```bash
+rm -rf emitter/{.gitignore,.vscode/,app/,db/,readme.md}
+```
+
 ### Try out the emitter
 
 Great - at this point, we're all set with our emitter. We should try it out,
@@ -292,3 +302,11 @@ OK, now to turn our attention to the recipient of this event.
 1. See the [Using index.cds Entry
    Points](https://cap.cloud.sap/docs/guides/integration/reuse-and-compose#index-cds)
    section of Capires Reuse and Compose topic.
+
+1. The `{ ... }` part of this invocation is called [Brace
+   expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html),
+   in case you're wondering[<sup>6</sup>](#footnotes).
+
+1. Bash forever![<sup>7</sup>](#footnotes)
+
+1. Yo dawg, I heard you like footnotes, so I put some footnotes in your footnotes.
