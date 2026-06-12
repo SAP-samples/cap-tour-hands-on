@@ -307,6 +307,6 @@ OK, now to turn our attention to the recipient of this event.
    expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html),
    in case you're wondering[<sup>6</sup>](#footnotes).
 
-1. Bash forever![<sup>7</sup>](#footnotes)
+1. Bash FTW[<sup>7</sup>](#footnotes)
 
 1. Yo dawg, I heard you like footnotes, so I put some footnotes in your footnotes.
