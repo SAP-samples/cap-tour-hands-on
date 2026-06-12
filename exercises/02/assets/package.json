@@ -1,0 +1,6 @@
+{
+  "name": "messaging",
+  "workspaces": [
+    "*"
+  ]
+}

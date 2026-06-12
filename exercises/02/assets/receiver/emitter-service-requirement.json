@@ -1,0 +1,4 @@
+      "EmitterService": {
+        "service": "codejam.emitter.EmitterService",
+        "model": "emitter"
+      },
