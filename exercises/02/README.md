@@ -176,9 +176,10 @@ automatically read[<sup>4</sup>](#footnotes).
 
 ### Clean up unused files
 
-While normally we want all the content created by `cds init`, it's mostly superfluous here, so for neatness and clarity, let's remove what we don't need.
+While normally we want all the content created by `cds init`, it's mostly
+superfluous here, so for neatness and clarity, let's remove what we don't need.
 
-Remove the unwanted content[<sup>5</sup>](#footnotes):
+👉 Remove the unwanted content[<sup>5</sup>](#footnotes):
 
 ```bash
 rm -rf emitter/{.gitignore,.vscode/,app/,db/,readme.md}
@@ -277,7 +278,211 @@ OK, now to turn our attention to the recipient of this event.
 
 ## Create a receiver service
 
+We can start off with the same approach, creating a basic receiver service in
+its own project subdirectory.
+
+👉 Do that now:
+
+```bash
+cds init receiver --add nodejs,file-based-messaging
+```
+
+The log output and `package.json` created will be pretty much the same as before.
+
+### Clean up unused files again
+
+As before, we only really need the `package.json` file.
+
+👉 Remove what we don't need:
+
+```bash
+rm -rf emitter/{.gitignore,.vscode/,app/,db/, srv/,readme.md}
+```
+
+### Add a custom server implementation
+
+All we really want to do here is have this receiver consume the events when it
+starts up. So we can use a [custom
+server](https://cap.cloud.sap/docs/node.js/cds-server#custom-server-js).
+
+Create `receiver/server.js` with the following content:
+
+```javascript
+const cds = require('@sap/cds')
+const log = cds.log('receiver')
+const eventID = 'Greeting.Received'
+
+cds.once('served', async () => {
+  log(`Setting up listener for ${eventID}`)
+  const EmitterService = await cds.connect.to('EmitterService')
+  EmitterService.on(eventID, (msg) => {
+    log('received:', msg.event, msg.data)
+  })
+})
+```
+
+We can view this as the flip side of `emitter/srv/main.js`, as it:
+
+- loads the CDS facade
+- creates an 'receiver' logging instance
+
+and then, in the one-time
+[served](https://cap.cloud.sap/docs/node.js/cds-server#served) event:
+
+- connects to the emitter service
+- defines a handler for `Greeting.Received` events, which simply logs them out
+
+### Define the requirement for the emitter service
+
+We also need to define a requirement for the emitter service.
+
+In `receiver/package.json`, add a section to the `cds.requires` so that it
+looks like this:
+
+```json
+{
+  "...": "...",
+  "cds": {
+    "requires": {
+      "EmitterService": {
+        "service": "codejam.emitter.EmitterService",
+        "model": "emitter"
+      },
+      "messaging": {
+        "kind": "file-based-messaging"
+      }
+    }
+  }
+}
+```
+
+### Wire things up at the workspace level
+
+Now we're all set; all that's left for us to do is wire things up at the
+"containing" level, i.e. from the NPM workspaces perspective. If we were to
+examine the entire contents of our `proj-02/` directory, for example with
+`tree`, we'd see this:
+
+```log
+.
+├── emitter
+│   ├── index.cds
+│   ├── package.json
+│   └── srv
+│       ├── main.cds
+│       └── main.js
+├── package.json
+└── receiver
+    ├── app
+    ├── db
+    ├── package.json
+    ├── readme.md
+    ├── server.js
+    └── srv
+
+7 directories, 8 files
+```
+
+👉 At the `proj-02/` level (where the `package.json` is), run:
+
+```bash
+npm install
+```
+
+What has this done for us? Well, apart from install the dependencies described
+in the `emitter` and `receiver` projects, it has also wired up those packages.
+
+👉 Have a look, either with your IDE's file & directory explorer, or simply
+with `tree`, like this (with `-L` to limit directory descent, and `-l` to show
+symbolic links):
+
+```bash
+tree -L 2 -l
+```
+
+Here's what you should see (with much of the output removed, for brevity):
+
+```log
+.
+├── emitter
+│   ├── index.cds
+│   ├── package.json
+│   └── srv
+├── node_modules
+│   ├── @cap-js
+│   ├── @eslint
+│   ├── @sap
+│   ├── ...
+│   ├── ee-first
+│   ├── emitter -> ../emitter
+│   ├── encodeurl
+│   ├── ...
+│   ├── readable-stream
+│   ├── receiver -> ../receiver
+│   ├── router
+│   ├── ...
+│   └── yaml
+├── package-lock.json
+├── package.json
+└── receiver
+    ├── package.json
+    └── server.js
+
+115 directories, 7 files
+```
+
+The `emitter` package in `emitter/` is local, but NPM has created a symbolic
+link to it so that it's available as if it had been retrieved and installed as
+normal.
+
+### Start the receiver
+
+It's now time to fire up the receiver.
+
+👉 Do that now:
+
+```bash
+cds watch receiver
+```
+
+You should see log output like this:
+
+```log
+[cds] - bootstrapping from { file: 'receiver/server.js' }
+[cds] - loaded model from 2 file(s):
+
+  emitter/index.cds
+  emitter/srv/main.cds
+
 ...
+
+[cds] - connect to messaging > file-based-messaging
+...
+[receiver] - Setting up listener for Greeting.Received
+...
+```
+
+And pretty much immediately after that, you should see this:
+
+```log
+[receiver] - received: Greeting.Received { info: 'Mock all the things!' }
+```
+
+Excellent!
+
+The event made its way to the receiver.
+
+### Check the message queue
+
+What is in `~/.cds-msg-box` now?
+
+👉 Let's have a look:
+
+```bash
+cat ~/.cds-msg-box
+```
+
+Nothing! The event record has gone. As we'd hoped and expected.
 
 ---
 
@@ -301,7 +506,7 @@ OK, now to turn our attention to the recipient of this event.
 
 1. See the [Using index.cds Entry
    Points](https://cap.cloud.sap/docs/guides/integration/reuse-and-compose#index-cds)
-   section of Capires Reuse and Compose topic.
+   section of the Reuse and Compose topic in Capire.
 
 1. The `{ ... }` part of this invocation is called [Brace
    expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html),
