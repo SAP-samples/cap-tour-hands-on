@@ -98,7 +98,7 @@ Use the cds REPL to confirm what the values are for your setup.
 cds repl
 ```
 
-👉 And at the prompt, ask for the values of both `cds.home` and `cds.root`.
+👉 At the prompt, ask for the values of both `cds.home` and `cds.root`.
 
 You should see something like this:
 
@@ -115,7 +115,10 @@ Welcome to cds repl v9.9.1
 Depending on your setup, the values, especially the first parts of the paths,
 may be different. But the key thing is that they're both, (literally)
 relatively speaking, easily accessible from where you are right now in
-`proj-03/` - `cds.home` is `./node_modules/@sap/cds` and `cds.root` is `.`.
+`proj-03/`:
+
+- `cds.home` is `./node_modules/@sap/cds`
+- `cds.root` is `.`
 
 #### Look at the dependencies
 
@@ -176,7 +179,7 @@ implemented ... as a plugin.
 
 Now we know what we need - a package with a `cds-plugin.js` file - let's create
 one. Even here we can embrace the local-first development mode that CAP
-celebrates by using NPM's "Workspaces" concept (see [Further
+celebrates by using NPM's "workspaces" concept (see [Further
 info](#further-info)), which will allow us to create the plugin locally but
 still "require" it via the normal `package.json#dependencies` route.
 
@@ -241,6 +244,36 @@ section in `proj-03`'s `package.json`:
     "flags"
   ]
 }
+```
+
+Let's also make sure we understand the structure of what's been created, and
+where.
+
+👉 Have a look:
+
+```bash
+tree -F -I node_modules
+```
+
+This should show something like this, where we can see that our new package is
+in its own `flags/` directory:
+
+```log
+./
+├── db/
+│   ├── data/
+│   │   ├── northwhisper-Categories.csv
+│   │   ├── northwhisper-Products.csv
+│   │   └── northwhisper-Suppliers.csv
+│   └── schema.cds
+├── flags/
+│   └── package.json
+├── package-lock.json
+├── package.json
+└── srv/
+    └── main.cds
+
+5 directories, 11 files
 ```
 
 ### Add some startup logging
@@ -325,17 +358,23 @@ log.debug('Starting up ...')
 
 We want our plugin to replace country names with flag emojis, for elements
 annotated with `@flagify`. So let's add this annotation to the supplier's
-country in our domain model, and then we have something to look for in terms of
+country in our model, and then we have something to look for in terms of
 schema (metadata) exploration, which is what our plugin will need to do too.
 
-Annotate the `Country` element of the `Suppliers` entity with `@flagify` with a
-directive like this, in a new file called `srv/annotations.cds`:
+Annotate the `Country` element of the `Suppliers` entity projection in the
+`Main` service with `@flagify` using a directive like this, in a new file
+called `srv/annotations.cds`:
 
 ```cds
-using northwhisper from '../db/schema';
+using Main from './main';
 
-annotate northwhisper.Suppliers : Country with @flagify;
+annotate Main.Suppliers : Country with @flagify;
 ```
+
+> Rather than annotate the entity at the schema level, this annotation is
+> deliberately at the service definition level, meaning we have the chance to
+> have a further projection on the `Suppliers` entity where this annotation is
+> not present.
 
 ### Check how the annotation is stored
 
