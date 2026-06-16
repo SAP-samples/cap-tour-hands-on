@@ -37,7 +37,7 @@ directory, than in a global install location elsewhere.
 npm install
 ```
 
-## Explore how plugins as core building blocks
+## Explore plugins as core building blocks
 
 Let's see if we can find evidence of the plugin concept being used in the core
 framework. We can turn on debugging for the plugins module and have a look.
@@ -148,7 +148,7 @@ This should produce something like this:
 }
 ```
 
-#### Look for signs of plugins
+### Look for signs of plugins
 
 We know from Capire (see the [Further info](#further-info) section) that the
 key file that makes your package a plugin, like the "index" file in other
