@@ -386,7 +386,7 @@ entity:
 
 ```bash
 cds compile srv \
-  | jq '.definitions["northwhisper.Suppliers"].elements'
+  | jq '.definitions["Main.Suppliers"].elements'
 ```
 
 This should emit something like this:
@@ -409,24 +409,7 @@ This should emit something like this:
   },
   "Products": {
     "type": "cds.Association",
-    "cardinality": {
-      "max": "*"
-    },
-    "target": "northwhisper.Products",
-    "on": [
-      {
-        "ref": [
-          "Products",
-          "Supplier"
-        ]
-      },
-      "=",
-      {
-        "ref": [
-          "$self"
-        ]
-      }
-    ]
+    "...": "..."
   }
 }
 ```
@@ -438,18 +421,20 @@ Neat!
 
 Now the plugin exists in its basic form, and is wired up, it's time to add the
 implementation. The power of plugins and what we can do here comes from the
-introspection facilities that are available to us via the CDS facade. We can
-look at the definitions in our model and identify the particular parts that we
-want our plugin to manipulate.
+introspection facilities that are available to us via the CDS facade.
+
+We can look at the definitions in our model and identify the particular parts
+that we want our plugin to manipulate or otherwise operate on.
 
 For our simple plugin here, the approach is:
 
 - wait for the services to be compiled and the server to be bootstrapped
-- look through he services and pick out those that are relevant (application
+- look through the services and pick out those that are relevant (application
   services, effectively)
-- for each service, work through the entities, and
+- for each service, work through the entities, and:
 - if any entity has elements annotated with `@flagify`, then we want to add a
-  handler to the "after" phase (see [Further info](#further-info))
+  handler to the "after" phase for reads on that entity (see [Further
+  info](#further-info))
 - this handler should process each record in the result set and make
   appropriate modifications to the values of those elements that have been
   annotated
@@ -546,12 +531,11 @@ While most of this logic is explained in part 3 of the CAP Node.js Plugins
 series (see [Further info](#further-info)), it's worth spending a few moments
 staring at this to understand what is being done:
 
-- the application services (`Main` here) are identified
+- the application services are identified (`Main`)
 - for each of these application services:
-  - the entities (`Products`, `Suppliers`, `Categories` here) are examined one
-    by one
-  - if any of the elements of the entity currently being examined have one or
-    more elements that have been annotated with `@flagify`, then:
+  - the entities are examined one by one (`Products`, `Suppliers`, `Categories`)
+  - if any of the elements of the entity currently being examined have been
+    annotated with `@flagify`, then:
   - those elements are collected into a list
   - then a handler for the `after` phase of reading the given entity is added
   - that handler works through the annotated elements, substituting a flag
@@ -565,7 +549,7 @@ That's about it!
 entity (remember we added the `@flagify` annotation to this entity's `Country`
 element):
 
-<http://localhost:4004/northwhisper/Suppliers$top=5>
+<http://localhost:4004/northwhisper/Suppliers?$top=5>
 
 You should see the entityset, complete with flag emojis for the countries:
 
