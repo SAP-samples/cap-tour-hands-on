@@ -22,12 +22,27 @@ rm -rf proj-03 \
   && tree
 ```
 
+## Install the runtime
+
+Normally this point in a project would be too early to think about installing
+the `@sap/cds` runtime and the rest of the project dependencies. But we'll do
+it here because it makes things simpler in terms of paths (relative and
+absolute) when we come to looking at some `@sap/cds` runtime components. It's
+easier to refer to and view them relative to (within) our `proj-03/` project
+directory, than in a global install location elsewhere.
+
+👉 Install the package dependencies for the project:
+
+```bash
+npm install
+```
+
 ## Explore how plugins as core building blocks
 
 Let's see if we can find evidence of the plugin concept being used in the core
 framework. We can turn on debugging for the plugins module and have a look.
 
-Start up the server with the `DEBUG` environment variable set to `plugins`:
+👉 Start up the server with the `DEBUG` environment variable set to `plugins`:
 
 ```bash
 DEBUG=plugins cds watch
@@ -38,10 +53,10 @@ Some interesting output appears in the server log, like this:
 ```log
 [cds.plugins] - fetched plugins in: 1.401ms
 [cds.plugins] - loading @sap/cds-fiori: {
-  impl: '[...]/lib/node_modules/@sap/cds-dk/node_modules/@sap/cds-fiori/cds-plugin.js'
+  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
 }
 [cds.plugins] - loading @cap-js/sqlite: {
-  impl: '[...]/lib/node_modules/@sap/cds-dk/node_modules/@cap-js/sqlite/cds-plugin.js'
+  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
 }
 [cds.plugins] - loaded plugins in: 1.346ms
 [cds] - loaded model from 2 file(s):
@@ -59,44 +74,8 @@ We can see there are two plugins being fetched and loaded:
 - `@sap/cds-fiori`
 - `@cap-js/sqlite`
 
-### Install the runtime
-
-Normally this point in a project would be too early to think about installing
-the `@sap/cds` runtime and the rest of the project dependencies. But we'll do
-it here because it makes things simpler in terms of paths (relative and
-absolute) when we come to looking at some `@sap/cds` runtime components. It's
-easier to refer to and view them relative to (within) our `proj-03/` project
-directory, than in a global install location elsewhere.
-
-👉 Install the package dependencies for the project:
-
-```bash
-npm install
-```
-
-While we're thinking about this project's dependencies, let's take a quick look
-at the `package.json` to see ... that there are no plugins explicitly defined
-as required:
-
-```json
-{
-  "name": "baseproj",
-  "version": "1.0.0",
-  "dependencies": {
-    "@sap/cds": "^9"
-  },
-  "devDependencies": {
-    "@cap-js/sqlite": "^2.4"
-  },
-  "scripts": {
-    "start": "cds-serve"
-  },
-  "private": true
-}
-```
-
 So let's investigate where these plugins (mentioned at the start of the CAP
-server log output) are coming from.
+server log output) are coming from and why they're being loaded.
 
 ### Look at the dependent packages
 
@@ -127,9 +106,9 @@ You should see something like this:
 node ➜ /workspaces/cap-tour-hands-on (main) $ cds repl
 Welcome to cds repl v9.9.1
 > cds.home
-/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-03/node_modules/@sap/cds
+/workspaces/cap-tour-hands-on/proj-03/node_modules/@sap/cds
 > cds.root
-/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-03
+/workspaces/cap-tour-hands-on/proj-03
 >
 ```
 
@@ -144,7 +123,7 @@ Now we know the actual locations, let's take a look at the dependencies - these
 will be listed in `dependencies` and `devDependencies` sections within the
 `package.json` files in each of these two locations.
 
-👉 List the dependencies of both key locations:
+👉 List the dependencies of both these locations:
 
 ```bash
 jq '.name, .dependencies + .devDependencies' \
@@ -190,10 +169,8 @@ and bingo - we have two, both in `cds.home` (in the `@sap/cds` runtime):
 ```
 
 And yes, these are `cds-plugin.js` files in packages that exactly match those
-we saw in the CAP server log output.
-
-
-
+we saw in the CAP server log output. And, also yes, the SQLite module is
+implemented ... as a plugin.
 
 ## Further info
 
