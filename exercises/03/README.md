@@ -514,8 +514,8 @@ cds.once('served', _ => {
   services.forEach(s => {
     [...s.entities].forEach(en => {
       if ([...en.elements].some(isFlagified)) {
-        const flagified = [...en.elements].filter(isFlagified)
-        s.after('READ', en.name, records => {
+        s.after('READ', en.name, (records, req) => {
+          const flagified = [...req.target.elements].filter(isFlagified)
           records.forEach(r =>
             flagified.forEach(el => r[el.name] = flags[r[el.name]] || r[el.name])
           )
@@ -536,10 +536,9 @@ staring at this to understand what is being done:
   - the entities are examined one by one (`Products`, `Suppliers`, `Categories`)
   - if any of the elements of the entity currently being examined have been
     annotated with `@flagify`, then:
-  - those elements are collected into a list
   - then a handler for the `after` phase of reading the given entity is added
-  - that handler works through the annotated elements, substituting a flag
-    emoji where possible
+  - that handler checks the annotated elements and works through the records,
+    substituting a flag emoji where appropriate and if possible
 
 That's about it!
 
