@@ -176,9 +176,11 @@ celebrates by using NPM's "Workspaces" concept (see [Further
 info](#further-info)), which will allow us to create the plugin locally but
 still "require" it via the normal `package.json#dependencies` route.
 
-What will the plugin do? Well, let's keep it super simple so we can focus on
-the plugin mechanics. It should replace country values with the corresponding
-flag emojis. An essential enterprise feature, I'm sure you'll agree!
+> [!NOTE]
+> What will the plugin do? Well, let's keep it super simple so we can focus on
+> the plugin mechanics. It should replace values with the corresponding flag
+> emojis, for elements that have been marked with a `@flagify` annotation. An
+> essential enterprise feature, I'm sure you'll agree!
 
 ### Create the plugin package directory
 
@@ -293,6 +295,93 @@ Assuming your CAP server is still running, the restart should now emit this:
 ```
 
 Success!
+
+### Switch the logging to debug level
+
+So that we don't see the 'Starting up ...' all the time, let's change the log
+level for that.
+
+👉 Do that by using `log.debug` in `flags/cds-plugin.js` instead, like this:
+
+```javascript
+const cds = require('@sap/cds')
+const log = cds.log('flags')
+log.debug('Starting up ...')
+```
+
+## Add our custom annotation to a country element
+
+We want our plugin to replace country names with flag emojis, for elements
+annotated with `@flagify`. So let's add this annotation to the supplier's
+country in our domain model, and then we have something to look for in terms of
+schema (metadata) exploration, which is what our plugin will need to do too.
+
+Annotate the `Country` element of the `Suppliers` entity with `@flagify` with a
+directive like this, in a new file called `srv/annotations.cds`:
+
+```cds
+using northwhisper from '../db/schema';
+
+annotate northwhisper.Suppliers : Country with @flagify;
+```
+
+### Check how the annotation is stored
+
+This annotation is stored simply alongside the rest of the attributes of the
+element. We can check this by having a quick look at the CSN.
+
+👉 Compile the model and extract the definition of the elements for this
+entity:
+
+```bash
+cds compile srv \
+  | jq '.definitions["northwhisper.Suppliers"].elements'
+```
+
+This should emit something like this:
+
+```json
+{
+  "SupplierID": {
+    "key": true,
+    "type": "cds.Integer"
+  },
+  "CompanyName": {
+    "type": "cds.String"
+  },
+  "City": {
+    "type": "cds.String"
+  },
+  "Country": {
+    "@flagify": true,
+    "type": "cds.String"
+  },
+  "Products": {
+    "type": "cds.Association",
+    "cardinality": {
+      "max": "*"
+    },
+    "target": "northwhisper.Products",
+    "on": [
+      {
+        "ref": [
+          "Products",
+          "Supplier"
+        ]
+      },
+      "=",
+      {
+        "ref": [
+          "$self"
+        ]
+      }
+    ]
+  }
+}
+```
+
+The annotation is just another key in the properties of the `Country` element.
+Neat!
 
 ## Further info
 
