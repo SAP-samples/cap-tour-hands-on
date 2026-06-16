@@ -52,9 +52,13 @@ Some interesting output appears in the server log, like this:
 
 ```log
 [cds.plugins] - fetched plugins in: 1.401ms
-[cds.plugins] - loading @sap/cds-fiori: { impl: 'node_modules/@sap/cds-fiori/cds-plugin.js' }
-[cds.plugins] - loading @cap-js/sqlite: { impl: 'node_modules/@cap-js/sqlite/cds-plugin.js' }
-[cds.plugins] - loaded plugins in: 1.346ms
+[cds.plugins] - loading @sap/cds-fiori: {
+  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
+}
+[cds.plugins] - loading @cap-js/sqlite: {
+  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
+}
+[cds.plugins] - loaded plugins in: 3.791ms
 [cds] - loaded model from 2 file(s):
 
   srv/main.cds
@@ -217,7 +221,7 @@ added 1 package in 312ms
 ```
 
 Perhaps more interestingly, it's also caused the addition of a new `workspaces`
-section in `proj-03`'s `package.json`: 
+section in `proj-03`'s `package.json`:
 
 ```json
 {
@@ -266,8 +270,12 @@ We see this:
 
 ```log
 [cds.plugins] - fetched plugins in: 22.209ms
-[cds.plugins] - loading @sap/cds-fiori: { impl: 'node_modules/@sap/cds-fiori/cds-plugin.js' }
-[cds.plugins] - loading @cap-js/sqlite: { impl: 'node_modules/@cap-js/sqlite/cds-plugin.js' }
+[cds.plugins] - loading @sap/cds-fiori: {
+  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
+}
+[cds.plugins] - loading @cap-js/sqlite: {
+  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
+}
 [cds.plugins] - loaded plugins in: 3.791ms
 ```
 
@@ -287,10 +295,14 @@ Assuming your CAP server is still running, the restart should now emit this:
 
 ```log
 [cds.plugins] - fetched plugins in: 3.949ms
-[cds.plugins] - loading @sap/cds-fiori: { impl: 'node_modules/@sap/cds-fiori/cds-plugin.js' }
+[cds.plugins] - loading @sap/cds-fiori: {
+  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
+}
 [cds.plugins] - loading flags: { impl: 'flags/cds-plugin.js' }
 [flags] - Starting up ...
-[cds.plugins] - loading @cap-js/sqlite: { impl: 'node_modules/@cap-js/sqlite/cds-plugin.js' }
+[cds.plugins] - loading @cap-js/sqlite: {
+  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
+}
 [cds.plugins] - loaded plugins in: 5.452ms
 ```
 
@@ -309,7 +321,7 @@ const log = cds.log('flags')
 log.debug('Starting up ...')
 ```
 
-## Add our custom annotation to a country element
+## Add our custom annotation to an element
 
 We want our plugin to replace country names with flag emojis, for elements
 annotated with `@flagify`. So let's add this annotation to the supplier's
@@ -383,12 +395,175 @@ This should emit something like this:
 The annotation is just another key in the properties of the `Country` element.
 Neat!
 
+## Implement the plugin logic
+
+Now the plugin exists in its basic form, and is wired up, it's time to add the
+implementation. The power of plugins and what we can do here comes from the
+introspection facilities that are available to us via the CDS facade. We can
+look at the definitions in our model and identify the particular parts that we
+want our plugin to manipulate.
+
+For our simple plugin here, the approach is:
+
+- wait for the services to be compiled and the server to be bootstrapped
+- look through he services and pick out those that are relevant (application
+  services, effectively)
+- for each service, work through the entities, and
+- if any entity has elements annotated with `@flagify`, then we want to add a
+  handler to the "after" phase (see [Further info](#further-info))
+- this handler should process each record in the result set and make
+  appropriate modifications to the values of those elements that have been
+  annotated
+
+### Add the country flag values
+
+The appropriate modifications here are to replace country names with their
+flags, so let's start with that.
+
+👉 Create a file `flags/flags.json` with this content:
+
+```json
+{
+  "Australia": "🇦🇺",
+  "Brazil": "🇧🇷",
+  "Canada": "🇨🇦",
+  "Denmark": "🇩🇰",
+  "Finland": "🇫🇮",
+  "France": "🇮🇹",
+  "Germany": "🇩🇪",
+  "Italy": "🇮🇹",
+  "Japan": "🇯🇵",
+  "Netherlands": "🇳🇱",
+  "Singapore": "🇸🇬",
+  "Spain": "🇪🇸",
+  "Sweden": "🇸🇪",
+  "UK": "🇬🇧",
+  "USA": "🇺🇸"
+}
+```
+
+👉 Now make sure this is loaded in the `flags/cds-plugin.js` file and add some
+debug log output:
+
+```javascript
+const cds = require('@sap/cds')
+const flags = require('./flags')
+const log = cds.log('flags')
+log.debug('Starting up ...')
+log.debug(`Flags available for ${Object.keys(flags).length} countries`)
+```
+
+### Define some helper functions
+
+To assist with our introspection, let's next define a handful of helper
+functions, all predicate functions (and one of which is partially applied, see
+[Further info](#further-info)).
+
+👉 Add these definitions straight after the `log.debug` statements:
+
+```javascript
+const isAppService = x => x.kind == 'app-service'
+const isAnnotated = a => x => x[a]
+const isFlagified = isAnnotated('@flagify')
+```
+
+Because of how beautifully annotations are stored, we are able to define a
+simple higher order function `isAnnotated` that can be used to construct more
+specific functions (such as `isFlagified`) by partially applying it.
+
+### Define the main plugin behaviour
+
+Now it's time for the core part of our plugin.
+
+The CDS facade emits a one-time `served` event once all services have been
+bootstrapped and are ready, so let's first specify that our logic should be
+invoked then.
+
+👉 Add this wrapper after the debug logs in `flags/cds-plugin.js`, along with the
+logic within it:
+
+```javascript
+cds.once('served', _ => {
+
+  const services = [...cds.services].filter(isAppService)
+
+  services.forEach(s => {
+    [...s.entities].forEach(en => {
+      if ([...en.elements].some(isFlagified)) {
+        const flagified = [...en.elements].filter(isFlagified)
+        s.after('READ', en.name, records => {
+          records.forEach(r =>
+            flagified.forEach(el => r[el.name] = flags[r[el.name]] || r[el.name])
+          )
+        })
+      }
+    })
+  })
+
+})
+```
+
+While most of this logic is explained in part 3 of the CAP Node.js Plugins
+series (see [Further info](#further-info)), it's worth spending a few moments
+staring at this to understand what is being done:
+
+- the application services (`Main` here) are identified
+- for each of these application services:
+  - the entities (`Products`, `Suppliers`, `Categories` here) are examined one
+    by one
+  - if any of the elements of the entity currently being examined have one or
+    more elements that have been annotated with `@flagify`, then:
+  - those elements are collected into a list
+  - then a handler for the `after` phase of reading the given entity is added
+  - that handler works through the annotated elements, substituting a flag
+    emoji where possible
+
+That's about it!
+
+## Try the plugin out
+
+👉 Now that we have everything we need, make a request to the `Suppliers`
+entity (remember we added the `@flagify` annotation to this entity's `Country`
+element):
+
+<http://localhost:4004/northwhisper/Suppliers$top=5>
+
+You should see the entityset, complete with flag emojis for the countries:
+
+![screenshot of the first 5 suppliers, with flag emojis](assets/suppliers-with-flags.png)
+
+What's more, because this entire feature is packaged up in a plugin, we can
+simply turn it off again at the package dependency level.
+
+👉 Try that now, by removing the dependency:
+
+```bash
+npm remove flags
+```
+
+Now a re-request of the same resource will return an entityset with regular
+country names.
+
+Well done!
+
 ## Further info
 
 - A deep dive into what causes plugins to be loaded, and from where, is
   available in the blog post [CAP Node.js plugins - part 1 - how things
   work](https://qmacro.org/blog/posts/2024/10/05/cap-node-js-plugins-part-1-how-things-work/).
+- The logic in this plugin is explained in more detail in [CAP Node.js plugins -
+  part 3 - writing our
+  own](http://localhost:5005/blog/posts/2025/01/17/cap-node-js-plugins-part-3-writing-our-own/).
 - The [CDS Plugin Packages](https://cap.cloud.sap/docs/node.js/cds-plugins)
   topic has a section on `cds-plugin.js`.
 - Learn more about [NPM
   Workspaces](https://docs.npmjs.com/cli/v11/using-npm/workspaces).
+- Learn about the different phases, or hooks: [on, before,
+  after](https://cap.cloud.sap/docs/guides/services/custom-code#hooks-on-before-after).
+- There are different [lifecycle
+  events](https://cap.cloud.sap/docs/node.js/cds-server#lifecycle-events)
+  emitted via the CDS facade, one of which is `served`.
+- The blog post [Point free coding and function
+  composition](https://qmacro.org/blog/posts/2025/05/15/point-free-coding-and-function-composition/)
+  may help to provide some background to the types of functions defined as
+  helpers here.
