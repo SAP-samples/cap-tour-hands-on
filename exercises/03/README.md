@@ -52,12 +52,8 @@ Some interesting output appears in the server log, like this:
 
 ```log
 [cds.plugins] - fetched plugins in: 1.401ms
-[cds.plugins] - loading @sap/cds-fiori: {
-  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
-}
-[cds.plugins] - loading @cap-js/sqlite: {
-  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
-}
+[cds.plugins] - loading @sap/cds-fiori: { impl: 'node_modules/@sap/cds-fiori/cds-plugin.js' }
+[cds.plugins] - loading @cap-js/sqlite: { impl: 'node_modules/@cap-js/sqlite/cds-plugin.js' }
 [cds.plugins] - loaded plugins in: 1.346ms
 [cds] - loaded model from 2 file(s):
 
@@ -172,6 +168,132 @@ And yes, these are `cds-plugin.js` files in packages that exactly match those
 we saw in the CAP server log output. And, also yes, the SQLite module is
 implemented ... as a plugin.
 
+## Build the skeleton of our own plugin
+
+Now we know what we need - a package with a `cds-plugin.js` file - let's create
+one. Even here we can embrace the local-first development mode that CAP
+celebrates by using NPM's "Workspaces" concept (see [Further
+info](#further-info)), which will allow us to create the plugin locally but
+still "require" it via the normal `package.json#dependencies` route.
+
+What will the plugin do? Well, let's keep it super simple so we can focus on
+the plugin mechanics. It should replace country values with the corresponding
+flag emojis. An essential enterprise feature, I'm sure you'll agree!
+
+### Create the plugin package directory
+
+👉 Create a new package for the plugin by initialising a new package in the
+context of a new workspace called "flags":
+
+```bash
+npm init \
+  --yes \
+  --workspace flags
+```
+
+This should emit something like this:
+
+```log
+Wrote to [...]/proj-03/flags/package.json:
+
+{
+  "name": "flags",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
+
+added 1 package in 312ms
+```
+
+Perhaps more interestingly, it's also caused the addition of a new `workspaces`
+section in `proj-03`'s `package.json`: 
+
+```json
+{
+  "name": "baseproj",
+  "version": "1.0.0",
+  "dependencies": {
+    "@sap/cds": "^9"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2.4"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true,
+  "workspaces": [
+    "flags"
+  ]
+}
+```
+
+### Add some startup logging
+
+For this skeleton step, all we want to do is get the plugin to announce itself.
+
+👉 Create a new file in the plugin directory (`flags/`) called `cds-plugin.js`
+with this content:
+
+```javascript
+const cds = require('@sap/cds')
+const log = cds.log('flags')
+log('Starting up ...')
+```
+
+That should be all we need, right?
+
+### Start up the main project
+
+👉 Now start up the main service in `proj-03` like we did before:
+
+```bash
+DEBUG=plugins cds watch
+```
+
+We see this:
+
+```log
+[cds.plugins] - fetched plugins in: 22.209ms
+[cds.plugins] - loading @sap/cds-fiori: { impl: 'node_modules/@sap/cds-fiori/cds-plugin.js' }
+[cds.plugins] - loading @cap-js/sqlite: { impl: 'node_modules/@cap-js/sqlite/cds-plugin.js' }
+[cds.plugins] - loaded plugins in: 3.791ms
+```
+
+It's essentially the same output as before.
+
+Where's our plugin?
+
+Well, we should know now that it's only loaded when defined as a dependency.
+
+👉 So let's do that now (in a separate terminal):
+
+```bash
+npm add flags
+```
+
+Assuming your CAP server is still running, the restart should now emit this:
+
+```log
+[cds.plugins] - fetched plugins in: 3.949ms
+[cds.plugins] - loading @sap/cds-fiori: { impl: 'node_modules/@sap/cds-fiori/cds-plugin.js' }
+[cds.plugins] - loading flags: { impl: 'flags/cds-plugin.js' }
+[flags] - Starting up ...
+[cds.plugins] - loading @cap-js/sqlite: { impl: 'node_modules/@cap-js/sqlite/cds-plugin.js' }
+[cds.plugins] - loaded plugins in: 5.452ms
+```
+
+Success!
+
 ## Further info
 
 - A deep dive into what causes plugins to be loaded, and from where, is
@@ -179,3 +301,5 @@ implemented ... as a plugin.
   work](https://qmacro.org/blog/posts/2024/10/05/cap-node-js-plugins-part-1-how-things-work/).
 - The [CDS Plugin Packages](https://cap.cloud.sap/docs/node.js/cds-plugins)
   topic has a section on `cds-plugin.js`.
+- Learn more about [NPM
+  Workspaces](https://docs.npmjs.com/cli/v11/using-npm/workspaces).
