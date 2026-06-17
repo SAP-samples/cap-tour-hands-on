@@ -191,7 +191,7 @@ cds: cds {
 
 It's also possible to control the "volume" of output, either on an
 execution-by-execution basis (`.inspect .depth=3 cds`) or by updating the
-default (`.inspect .depth=2`). The "volume" goes all the way to
+default (`.inspect .depth=2`). It goes all the way to
 11[<sup>2</sup>](#footnotes).
 
 ### Try out run
@@ -352,6 +352,85 @@ Main.entities: [Function (anonymous)] LinkedDefinitions {
 }
 ```
 
+> Of course, we can use other techniques to access this information, such as
+> with the spread syntax (`[...Main.entities]`) or using destructuring (`{
+> Products } = Main.entities`). Exploration of these approaches is left as an
+> exercise for you, dear reader.
+
+### Revisit the inspection of the CDS facade
+
+Now that we have a running server in the cds REPL, let's revisit the CDS facade.
+
+Re-inspect it now:
+
+```javascript
+> .inspect cds
+```
+
+This time, we see lots more top-level properties:
+
+```javascript
+cds: cds {
+  _events: [Object: null prototype],
+  _eventsCount: 6,
+  _maxListeners: undefined,
+  model: [LinkedCSN],
+  db: [SQLiteService],
+  cli: [Object],
+  root: '/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-04',
+  services: [Object],
+  extend: [Function (anonymous)],
+  home: '/home/dj/.npm-packages/lib/node_modules/@sap/cds-dk/node_modules/@sap/cds',
+  version: '9.9.1',
+  parse: [Function],
+  utils: [Object],
+  options: [Object],
+  env: [Config],
+  plugins: [Promise],
+  server: [AsyncFunction],
+  log: [Function],
+  builtin: [Object],
+  service: [Function],
+  requires: {},
+  app: [Function],
+  debug: [Function: cds_debug],
+  resolve: [Function],
+  load: [Function],
+  compile: [Function],
+  deploy: [Function],
+  edmxs: null,
+  minify: [Function],
+  type: [class type extends any],
+  linked: [Function],
+  entity: [class entity extends struct],
+  connect: [AsyncFunction],
+  Service: [Function],
+  infer: [Function],
+  ql: [Function],
+  compiler: [Object],
+  EventContext: [Function],
+  User: [Function],
+  serve: [Function (anonymous)],
+  i18n: [I18nFacade],
+  ApplicationService: [Function],
+  middlewares: [Object],
+  Request: [Function: Request],
+  shutdown: [AsyncFunction: _shutdown],
+  Symbol(shapeMode): false,
+  Symbol(kCapture): false
+}
+```
+
+All of the empty properties mentioned earlier now have values.
+
+👉 Take a moment to explore these, with, for example:
+
+- `cds.model` (effectively the compiled model, in an internal CSN
+  representation
+- `cds.db === db` (yes, the database property points to the `db` service)
+- `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
+  their kinds)
+
 ## Further info
 
 - The [Wikipedia article on the
@@ -377,3 +456,5 @@ Main.entities: [Function (anonymous)] LinkedDefinitions {
 1. This is either a reference to a classic scene in [Spinal
    Tap](https://en.wikipedia.org/wiki/Up_to_eleven), or [yet another
    Schnapszahl](https://www.google.com/search?q=site%3Aqmacro.org+schnapszahl).
+1. MDN is a great resource, and has a section on JavaScript's [Spread syntax
+   (...)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax).
