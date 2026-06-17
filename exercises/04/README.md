@@ -159,7 +159,9 @@ This is a little cumbersome, and also is a bit too far the other way:
 ]
 ```
 
-This is where `.inspect` comes in, the [dialectical third](https://en.wikipedia.org/wiki/Goldilocks_and_the_Three_Bears#:~:text=this%20as%20the%20%22-,dialectical%20three,-%22%20where%20%22the%20first) option - just right.
+This is where `.inspect` comes in, the [dialectical
+third](https://en.wikipedia.org/wiki/Goldilocks_and_the_Three_Bears#:~:text=this%20as%20the%20%22-,dialectical%20three,-%22%20where%20%22the%20first)
+option - just right.
 
 👉 Give it a go:
 
@@ -431,6 +433,131 @@ All of the empty properties mentioned earlier now have values.
 - `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
   their kinds)
 
+### Try out some queries
+
+In CAP, query objects are first class citizens and essential to our
+understanding of the fundamentals. There are many ways of constructing and
+executing queries (see [Further info](#further-info)) - let's start with the
+REST-style API.
+
+Let's read the details of the "Chai" product, using the `db` variable that's been
+made available to us.
+
+👉 First, let's remind ourselves of what `db` represents:
+
+```javascript
+> db
+```
+
+It's a `SQLiteService` object representing the database connection, effectively:
+
+```javascript
+SQLiteService {
+  name: 'db',
+  options: [Object],
+  kind: 'sqlite',
+  model: [LinkedCSN],
+  handlers: [EventHandlers],
+  definition: undefined,
+  pools: [Object],
+  class: [Function],
+  _source: '/home/dj/.npm-packages/lib/node_modules/@sap/cds-dk/node_modules/@cap-js/sqlite/index.js',
+  onDELETE: [AsyncFunction: deep_delete]
+}
+```
+
+We can call HTTP style methods on this object, passing objects that represent
+the entities, objects that have also been made available in the cds REPL
+context.
+
+👉 Try that now:
+
+```javascript
+> db.get(Products).where({ProductName:'Chai'})
+```
+
+What we get from this is a little unexpected, but very enlightening:
+
+```javascript
+cds.ql {
+  SELECT: {
+    from: { ref: [ 'northwhisper.Products' ] },
+    where: [ { ref: [ 'ProductName' ] }, '=', { val: 'Chai' } ]
+  }
+}
+```
+
+It's a representation (in CQN) of the first class query object we've just constructed.
+
+> For the deepest dive you could ever wish for on queries and expressions,
+> covering CDL, CSN, CQL, CQN, CXL and CXN, have a look at the [CDS expressions
+> in
+> CAP](https://qmacro.org/blog/posts/2025/12/09/a-new-hands-on-sap-dev-mini-series-on-the-core-expression-language-in-cds/)
+> series of videos and accompanying detailed blog posts.
+
+OK, so we have a query object. What should we do with it? Well, we can send it
+to the database to be executed, via the `run` method of the `db` object.
+
+👉 But first, for convenience, and to meditate for a second on the nature of
+queries as first class objects, let's re-create the query and assign the
+resulting query object to a variable:
+
+```javascript
+> chai = db.get(Products).where({ProductName:'Chai'})
+```
+
+👉 Now let's send it to be executedL
+
+```javascript
+> db.run(chai)
+```
+
+Oh:
+
+```javascript
+Promise {
+  <pending>,
+  Symbol(async_id_symbol): 223,
+  Symbol(trigger_async_id_symbol): 2
+}
+```
+
+More gratification delay!
+
+As with most things in Node.js, execution is asynchronous. So we need to
+`await` the call:
+
+```javascript
+> await db.run(chai)
+```
+
+Success!
+
+```javascript
+[
+  {
+    ProductID: 1,
+    ProductName: 'Chai',
+    UnitPrice: 18,
+    Category_CategoryID: 1,
+    Supplier_SupplierID: 1,
+    UnitsInStock: 39,
+    Discontinued: false
+  }
+]
+```
+
+Actually, we can await the query directly, and the default behaviour is to do
+exactly this.
+
+👉 Let's try that:
+
+```javascript
+> await chai
+```
+
+This gives us the same effect. Nice!
+
 ## Further info
 
 - The [Wikipedia article on the
@@ -440,6 +567,13 @@ All of the empty properties mentioned earlier now have values.
   in Capire has a great overview.
 - [LinkedDefinitions](https://cap.cloud.sap/docs/node.js/cds-reflect#iterable)
   is an iterable which is used to store all objects of a linked model.
+- The [Core Services](https://cap.cloud.sap/docs/node.js/core-services) topic
+  in Capire provides comprehensive coverage of the various query contexts and
+  construction mechanisms (including
+  [REST-style](https://cap.cloud.sap/docs/node.js/core-services#rest-style-api)
+  and
+  [CRUD-style](https://cap.cloud.sap/docs/node.js/core-services#crud-style-api)
+  APIs).
 
 ## Footnotes
 
