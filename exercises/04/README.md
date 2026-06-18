@@ -361,9 +361,9 @@ Main.entities: [Function (anonymous)] LinkedDefinitions {
 ```
 
 > Of course, we can use other techniques to access this information, such as
-> with the spread syntax (`[...Main.entities]`) or using destructuring (`{
-> Products } = Main.entities`). Exploration of these approaches is left as an
-> exercise for you, dear reader.
+> with the spread syntax (`[...Main.entities]`)[<sup>3</sup>](#footnotes) or
+> using destructuring (`{ Products } = Main.entities`). Exploration of these
+> approaches is left as an exercise for you, dear reader.
 
 ### Revisit the inspection of the CDS facade
 
@@ -761,6 +761,174 @@ that takes us back to the "JavaScript" prompt is `.js`.
 .js
 ```
 
+## Explore CAP building blocks by creating a new service
+
+With access to the entire CDS facade and an executable CAP "interpreter" at our
+fingertips, we can do pretty much anything we want. Let's finish off this
+exercise by creating a service from scratch and sending a message to it. Why?
+So we understand the fundamentals and get a better understanding of what
+services and messages really are.
+
+### Explore the Main handlers
+
+👉 First, revisit the `Main` service object and have a look at its handlers:
+
+```javascript
+Main.handlers
+```
+
+This shows us that there are many built-in handlers (remember, one of the key
+reasons to use CAP is that [the code is in the
+framework](https://qmacro.org/blog/posts/2024/11/07/five-reasons-to-use-cap/#1-the-code-is-in-the-framework-not-outside-of-it)):
+
+```javascript
+EventHandlers {
+  _initial: [
+    {
+      before: '*',
+      handler: [Function: check_service_level_restrictions]
+    },
+    { before: '*', handler: [Function: check_auth_privileges] },
+    { before: '*', handler: [Function: check_readonly] },
+    { before: '*', handler: [Function: check_insertonly] },
+    { before: '*', handler: [Function: check_odata_constraints] },
+    { before: '*', handler: [Function: check_autoexposed] },
+    { before: '*', handler: [AsyncFunction: enforce_auth] },
+    { before: 'READ', handler: [Function: restrict_expand] },
+    { before: 'CREATE', handler: [AsyncFunction: validate_input] },
+    { before: 'UPDATE', handler: [AsyncFunction: validate_input] },
+    { before: 'NEW', handler: [AsyncFunction: validate_input] },
+    { before: 'READ', handler: [Function: handle_paging] },
+    { before: 'READ', handler: [Function: handle_sorting] }
+  ],
+  before: [],
+  on: [
+    { on: 'CREATE', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'READ', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'UPDATE', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'UPSERT', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'DELETE', handler: [AsyncFunction: handle_crud_requests] }
+  ],
+  after: [
+    { after: 'CREATE', handler: [AsyncFunction (anonymous)] },
+    { after: 'UPSERT', handler: [AsyncFunction (anonymous)] },
+    { after: 'UPDATE', handler: [AsyncFunction (anonymous)] }
+  ],
+  _error: []
+}
+```
+
+We're looking at a basic building block in CAP here; after all, [everything is
+a
+service](https://qmacro.org/blog/posts/2024/12/10/tasc-notes-part-4/#everything-is-a-service)!
+What's more, [services are
+cheap](https://github.com/qmacro/capref/blob/main/axioms/AXI004.md)!
+
+### Create a new basic service
+
+We saw earlier that `Main` has the type `ApplicationService`, effectively an
+instance of the `cds.ApplicationService` class. Capire's "Core Services" topic
+(see [Further info](#further-info)) tells us that `cds.ApplicationService` is
+built upon the base class `cds.Service` which has everything we need for the
+behaviour of reacting to messages through execution of registered event handlers.
+
+👉 So let's create a new instance of `cds.Service`, as that's all we should need:
+
+```javascript
+srv = new cds.Service`
+```
+
+This should emit something like this:
+
+```javascript
+Service {
+  name: 'Service',
+  options: {},
+  handlers: [EventHandlers],
+  definition: undefined
+}
+```
+
+If we were to look at the handlers, we'd see that -- in contrast to `Main`'s
+handlers -- there are none yet:
+
+```javascript
+> srv.handlers
+EventHandlers {
+  _initial: [],
+  before: [],
+  on: [],
+  after: [],
+  _error: []
+}
+```
+
+### Send a message
+
+That means that there will be nothing to handle anything.
+
+👉 Try one anyway:
+
+```javascript
+await srv.send('codejam', { location: 'Rot' })
+```
+
+The message is sent, but there's no reaction.
+
+### Define a handler
+
+What's [the simplest thing that could possibly
+work](https://creators.spotify.com/tech-aloud/episodes/SAP-BTP-runtimes--my-personal-considerations-and-preferences-on-Cloud-Foundry--Kyma--ABAP-runtimes---Mauricio-Lauffer---18-Jun-2025-e34tadv)
+here as a handler? How about just `console.log`[<sup>4</sup>](#footnotes):
+
+```javascript
+srv.on('codejam', console.log)
+```
+
+This is now visible in the list of handlers:
+
+```javascript
+> srv.handlers
+EventHandlers {
+  _initial: [],
+  before: [],
+  on: [ { on: 'codejam', handler: [Function: log] } ],
+  after: [],
+  _error: []
+}
+```
+
+but more importantly, what will happen now?
+
+👉 Try sending another message:
+
+```javascript
+await srv.send('codejam', { before: 'reCAP' })
+```
+
+We see this:
+
+```log
+Request { method: 'codejam', data: { before: 'reCAP' } } [AsyncFunction: next]
+```
+
+What we see here are two arguments that the handler received:
+
+- a `Request` object with the message payload
+- a `next` function to enable the calling of any further handlers in the
+  interceptor stack
+
+> For more on further handlers, the interceptor stack, and -- crucially -- the
+> difference between synchronous request/response style messages and
+> asynchronous events (reflected in the difference between `srv.send` and
+> `srv.emit`), see the [Creating a service from
+> scratch](https://qmacro.org/blog/posts/2025/07/21/a-recap-intro-to-the-cds-repl/#creating-a-service-from-scratch)
+> section of [A reCAP intro to the cds
+> REPL](https://qmacro.org/blog/posts/2025/07/21/a-recap-intro-to-the-cds-repl/).
+
+There's so much more to explore in the cds REPL, but we'll finish here. Well
+done!
+
 ## Further info
 
 - The [Wikipedia article on the
@@ -776,12 +944,10 @@ that takes us back to the "JavaScript" prompt is `.js`.
   [REST-style](https://cap.cloud.sap/docs/node.js/core-services#rest-style-api)
   and
   [CRUD-style](https://cap.cloud.sap/docs/node.js/core-services#crud-style-api)
-  APIs).
+  APIs). It also covers `cds.Service` and `cds.ApplicationService`.
 - Capire's [Querying in JavaScript](https://cap.cloud.sap/docs/node.js/cds-ql)
   topic has a wealth of information that goes far beyond what we've covered in
-  this exercise. ## Footnotes
-
----
+  this exercise.
 
 ## Footnotes
 
@@ -800,3 +966,8 @@ that takes us back to the "JavaScript" prompt is `.js`.
    Schnapszahl](https://www.google.com/search?q=site%3Aqmacro.org+schnapszahl).
 1. MDN is a great resource, and has a section on JavaScript's [Spread syntax
    (...)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax).
+1. The beauty of JavaScript is in evidence here - handlers are provided as
+   functions (as `srv.on` is a [higher order
+   function](https://en.wikipedia.org/wiki/Higher-order_function) which takes a
+   handler function as one of its arguments, and `console.log` is a function so
+   perfectly valid to provide here.
