@@ -408,7 +408,7 @@ cds: cds {
   linked: [Function],
   entity: [class entity extends struct],
   connect: [AsyncFunction],
-  Service: [Function],
+  Service: [Function]
   infer: [Function],
   ql: [Function],
   compiler: [Object],
@@ -435,7 +435,15 @@ All of the empty properties mentioned earlier now have values.
 - `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
   their kinds)
 
-### Try out some queries
+### Try out .ql
+
+While this section fits in naturally with the flow (we've tried out the other
+cds REPL specific commands so far), we need to take a step back a little first.
+
+The `.ql` command switches us into a different cds REPL mode where we can
+enter query constructs directly. But before we do that, it's worth taking
+a moment to explore queries in more general terms. So let's do that
+first.
 
 In CAP, query objects are first class citizens and essential to our
 understanding of the fundamentals. There are many ways of constructing and
@@ -443,6 +451,7 @@ executing queries (see [Further info](#further-info)) - let's start with the
 REST-style API.
 
 #### Explore the REST-style API
+
 Let's read the details of the "Chai" product, using the `db` variable that's been
 made available to us.
 
@@ -560,6 +569,72 @@ query objects is to be executed via `db.run`:
 ```
 
 This, therefore, gives us the same effect. Nice!
+
+#### Explore the CRUD-style API
+
+Let's spend a brief moment on the CRUD-style API (see also [Further
+info](#further-info)), which is an alternative set of convenience methods to
+contruct queries.
+
+Let's have a look at a luxury product:
+
+```javascript
+> await db.read(Products).where({ProductName:{'like':'%Kaviar%'}})
+```
+
+which shows us:
+
+```javascript
+[
+  {
+    ProductID: 73,
+    ProductName: 'Röd Kaviar',
+    UnitPrice: 15,
+    Category_CategoryID: 8,
+    Supplier_SupplierID: 17,
+    UnitsInStock: 101,
+    Discontinued: false
+  }
+]
+```
+
+Let's try another CRUD-style method to update the price:
+
+```javascript
+> await db.update(Products).set({UnitPrice: 20}).where({ProductID:73})
+```
+
+This returns the number of rows affected:
+
+```javascript
+1
+```
+
+So this was a little taste of an alternative API.
+
+Both styles of API we've seen so far are essentially convenience methods that
+build query objects that can also be constructed more "natively" with the
+`cds.ql` method. Let's explore that now.
+
+#### Explore cds.ql and its fluent API helper functions
+
+Querying in CAP Node.js revolves around `cds.ql` which also sports useful
+helper functions (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) which makes for a
+fluent-style API approach to query construction. [The world is our
+oyster](https://nosweatshakespeare.com/quotes/famous/the-worlds-your-oyster/)!
+
+Try constructing a query using one of these helper functions.
+
+```javascript
+> q = SELECT
+  .from(Products)
+  .where({UnitPrice:20})
+  .orderBy({ProductName:'desc'})
+```
+
+
+
+
 
 ## Further info
 
