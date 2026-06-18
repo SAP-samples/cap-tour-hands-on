@@ -51,6 +51,10 @@ at this point, and that's `2 + 2`:
 4
 ```
 
+> In subsequent suggested cds REPL commands for you to enter, the prompt (`>`)
+> won't be shown, unless it's part of an illustration that includes output from
+> that command.
+
 Yes, this Node.js based REPL expects and interprets JavaScript, unsurprisingly.
 
 ## Explore the commands
@@ -60,7 +64,7 @@ The cds REPL adds a few extra commands to the standard Node.js REPL.
 👉 Look at what commands are available:
 
 ```javascript
-> .help
+.help
 ```
 
 and you should see a list like this:
@@ -93,7 +97,7 @@ by default, injected into the context.
 👉 Take a look:
 
 ```javascript
-> cds
+cds
 ```
 
 This emits a ton of output:
@@ -142,7 +146,7 @@ With regular JavaScript facilities, we can get a better overview.
 👉 Try this:
 
 ```javascript
-> Object.keys(cds)
+Object.keys(cds)
 ```
 
 This is a little cumbersome, and also is a bit too far the other way (not
@@ -167,7 +171,7 @@ option - just right.
 👉 Give it a go:
 
 ```javascript
-> .inspect cds
+.inspect cds
 ```
 
 This emits something like this:
@@ -211,7 +215,7 @@ With the `.run` command we can change that, and start up a server.
 i.e. the `proj-04/` directory we're in:
 
 ```javascript
-> .run .
+.run .
 ```
 
 We get some usual server output which we're used to from `cds watch` (in fact
@@ -329,7 +333,7 @@ However, due to how some of the detail is structured and stored, as
 struggle to enumerate members in a way we would normally expect. For example:
 
 ```javascript
-> Main.entities
+Main.entities
 ```
 
 will just emit:
@@ -343,7 +347,7 @@ Instead, we can use `.inspect`.
 👉 Try it:
 
 ```javascript
-> .inspect Main.entities
+.inspect Main.entities
 ```
 
 which produces:
@@ -368,7 +372,7 @@ Now that we have a running server in the cds REPL, let's revisit the CDS facade.
 👉 Re-inspect it now:
 
 ```javascript
-> .inspect cds
+.inspect cds
 ```
 
 This time, we see lots more top-level properties:
@@ -435,7 +439,7 @@ All of the empty properties mentioned earlier now have values.
 - `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
   their kinds)
 
-### Try out .ql
+### Try out query construction and .ql
 
 While this section fits in naturally with the flow (we've tried out the other
 cds REPL specific commands so far), we need to take a step back a little first.
@@ -458,7 +462,7 @@ made available to us.
 👉 First, let's remind ourselves of what `db` represents:
 
 ```javascript
-> db
+db
 ```
 
 It's a `SQLiteService` object representing the database connection, effectively:
@@ -485,7 +489,7 @@ context.
 👉 Try that now:
 
 ```javascript
-> db.get(Products).where({ProductName:'Chai'})
+db.get(Products).where({ProductName:'Chai'})
 ```
 
 What we get from this is a little unexpected, but very enlightening:
@@ -515,13 +519,13 @@ queries as first class objects, let's re-create the query and assign the
 resulting query object to a variable:
 
 ```javascript
-> chai = db.get(Products).where({ProductName:'Chai'})
+chai = db.get(Products).where({ProductName:'Chai'})
 ```
 
 👉 Now let's send it to be executedL
 
 ```javascript
-> db.run(chai)
+db.run(chai)
 ```
 
 Oh:
@@ -536,11 +540,11 @@ Promise {
 
 More [gratification delay](https://en.wikipedia.org/wiki/Delayed_gratification)!
 
-As with most things in Node.js, execution is asynchronous. So we need to
+👉 As with most things in Node.js, execution is asynchronous. So we need to
 `await` the call:
 
 ```javascript
-> await db.run(chai)
+await db.run(chai)
 ```
 
 Success!
@@ -565,7 +569,7 @@ query objects is to be executed via `db.run`:
 👉 Let's try that:
 
 ```javascript
-> await chai
+await chai
 ```
 
 This, therefore, gives us the same effect. Nice!
@@ -576,10 +580,10 @@ Let's spend a brief moment on the CRUD-style API (see also [Further
 info](#further-info)), which is an alternative set of convenience methods to
 contruct queries.
 
-Let's have a look at a luxury product:
+👉 Let's have a look at a luxury product:
 
 ```javascript
-> await db.read(Products).where({ProductName:{'like':'%Kaviar%'}})
+await db.read(Products).where({ProductName:{'like':'%Kaviar%'}})
 ```
 
 which shows us:
@@ -598,13 +602,13 @@ which shows us:
 ]
 ```
 
-Let's try another CRUD-style method to update the price:
+👉 Let's try another CRUD-style method to update the price:
 
 ```javascript
-> await db.update(Products).set({UnitPrice: 20}).where({ProductID:73})
+await db.update(Products).set({UnitPrice: 20}).where({ProductID:73})
 ```
 
-This returns the number of rows affected:
+The number of rows affected is returned:
 
 ```javascript
 1
@@ -623,18 +627,139 @@ helper functions (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) which makes for a
 fluent-style API approach to query construction. [The world is our
 oyster](https://nosweatshakespeare.com/quotes/famous/the-worlds-your-oyster/)!
 
-Try constructing a query using one of these helper functions.
+👉 Try constructing a query using one of these helper functions.
 
 ```javascript
-> q = SELECT
-  .from(Products)
-  .where({UnitPrice:20})
-  .orderBy({ProductName:'desc'})
+q = SELECT.from(Products).where({UnitPrice:20}).orderBy({ProductName:'desc'})
 ```
 
+This will produce an object that, represented in CQN, looks like this:
 
+```javascript
+cds.ql {
+  SELECT: {
+    from: { ref: [ 'northwhisper.Products' ] },
+    where: [ { ref: [ 'UnitPrice' ] }, '=', { val: 20 } ],
+    orderBy: [ { ref: [ 'ProductName' ], sort: 'desc' } ]
+  }
+}
+```
 
+Note that the "class" is `cds.ql`, indicating that the `SELECT` indeed helped
+us construct a query object.
 
+And of course, `await`ing the query object will cause it to be executed:
+
+```javascript
+> await q
+[
+  {
+    ProductID: 73,
+    ProductName: 'Röd Kaviar',
+    UnitPrice: 20,
+    Category_CategoryID: 8,
+    Supplier_SupplierID: 17,
+    UnitsInStock: 101,
+    Discontinued: false
+  },
+  {
+    ProductID: 49,
+    ProductName: 'Maxilaku',
+    UnitPrice: 20,
+    Category_CategoryID: 3,
+    Supplier_SupplierID: 23,
+    UnitsInStock: 10,
+    Discontinued: false
+  }
+]
+```
+
+What if we were to not use the `SELECT` helper function, and instead pass some
+CQL directly to `cds.ql`? What would that look like?
+
+Let's try it:
+
+```javascript
+cds.ql `select from Products where UnitPrice = 20 order by ProductName desc`
+```
+
+What's produced is a query object that's pretty much the same as before:
+
+```javascript
+cds.ql {
+  SELECT: {
+    from: { ref: [ 'Products' ] },
+    where: [ { ref: [ 'UnitPrice' ] }, '=', { val: 20 } ],
+    orderBy: [ { ref: [ 'ProductName' ], sort: 'desc' } ]
+  }
+}
+```
+
+Now we're getting to the heart of queries, the facilities that revolve around
+and are supported by `cds.ql`. You'll find that the flexibility and power of
+CQL means that you'll likely want to use `cds.ql` more often than you think.
+
+And for that, there's a special mode in the cds REPL.
+
+#### Invoke the .ql command
+
+That mode is "cql" mode, and is what we get to with the third of the three cds
+REPL specific commands.
+
+👉 Enter the "cql" mode by using the `.ql` command, whereupon the prompt will
+change from the standard "JavaScript" mode prompt (`>`) to the "cql" prompt:
+
+```javascript
+> .ql
+cql>
+```
+
+Here we can enter CQL comfortably and directly, and it gets passed to `cds.ql`,
+turned into a query object, and executed.
+
+Re-try that CQL but in "direct" fashion here in "cql" mode:
+
+```sql
+select from Products where UnitPrice = 20 order by ProductName desc
+```
+
+The query result is provided without fanfare, exactly what we want:
+
+```javascript
+[
+  {
+    ProductID: 73,
+    ProductName: 'Röd Kaviar',
+    UnitPrice: 20,
+    Category_CategoryID: 8,
+    Supplier_SupplierID: 17,
+    UnitsInStock: 101,
+    Discontinued: false
+  },
+  {
+    ProductID: 49,
+    ProductName: 'Maxilaku',
+    UnitPrice: 20,
+    Category_CategoryID: 3,
+    Supplier_SupplierID: 23,
+    UnitsInStock: 10,
+    Discontinued: false
+  }
+]
+```
+
+There's so much more to explore here (and not enough space!), so please refer
+to the "Querying in JavaScript" link in the [Further info](#further-info)
+section.
+
+If we were to ask for `.help` at this point in "cql" mode, we'd see the command
+that takes us back to the "JavaScript" prompt is `.js`.
+
+👉 Switch back now:
+
+```javascript
+.js
+```
 
 ## Further info
 
@@ -652,6 +777,11 @@ Try constructing a query using one of these helper functions.
   and
   [CRUD-style](https://cap.cloud.sap/docs/node.js/core-services#crud-style-api)
   APIs).
+- Capire's [Querying in JavaScript](https://cap.cloud.sap/docs/node.js/cds-ql)
+  topic has a wealth of information that goes far beyond what we've covered in
+  this exercise. ## Footnotes
+
+---
 
 ## Footnotes
 
