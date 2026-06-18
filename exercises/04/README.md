@@ -4,7 +4,7 @@ In any language or development environment, having a REPL is a superpower, and
 it pays to embrace it and be at least a little familiar with it. CAP as a whole
 is built on solid foundations and practices that have matured over the decades,
 and the REPL is part of that, first appearing in the 1960's and initially
-popularised in the LISP and LISP-derivative communities.
+popularised in the LISP and LISP-derivative language communities.
 
 Node.js has a REPL, and it is upon this REPL that the cds REPL is based.
 
@@ -80,7 +80,7 @@ and you should see a list like this:
 
 The cds REPL specific commands are `.inspect`, `.ql` and `.run`.
 
-### Try out inspect
+### Try out .inspect
 
 The `.inspect` command is a configurable structure viewer, effectively. It
 gives us a comfortable way of looking at structures, either as part of the CAP
@@ -145,7 +145,8 @@ With regular JavaScript facilities, we can get a better overview.
 > Object.keys(cds)
 ```
 
-This is a little cumbersome, and also is a bit too far the other way:
+This is a little cumbersome, and also is a bit too far the other way (not
+enough information):
 
 ```javascript
 [
@@ -196,7 +197,7 @@ execution-by-execution basis (`.inspect .depth=3 cds`) or by updating the
 default (`.inspect .depth=2`). It goes all the way to
 11[<sup>2</sup>](#footnotes).
 
-### Try out run
+### Try out .run
 
 In the output from `.inspect cds` just now, there were fewer than 20 properties
 shown. Some of these, such as `model`, `db` and `services` were also either
@@ -278,14 +279,15 @@ cds repl --run . # or cds r -r .
 ```
 
 👉 Once you're at the cds REPL prompt, explore the global variables there, such
-as `Products`, `db` and `Main`. Try to notice the different object types:
+as `Products`, `db` and `Main`, by typing them into the cds REPL prompt. Try to
+notice not only the different object types:
 
 - `Products`: `entity`
 - `db`: `SQLiteService`
 - `Main`: `ApplicationService`
 
-as well as their component parts, for example we can see the element details in
-the `Products` entity:
+but also each object's component parts. For example we can see the element
+details in the `Products` entity:
 
 ```javascript
 entity {
@@ -324,7 +326,7 @@ entity {
 
 However, due to how some of the detail is structured and stored, as
 `LinkedDefintions` (see [Further info](#further-info)), we can sometimes
-struggle to enumerate members. For example:
+struggle to enumerate members in a way we would normally expect. For example:
 
 ```javascript
 > Main.entities
@@ -363,7 +365,7 @@ Main.entities: [Function (anonymous)] LinkedDefinitions {
 
 Now that we have a running server in the cds REPL, let's revisit the CDS facade.
 
-Re-inspect it now:
+👉 Re-inspect it now:
 
 ```javascript
 > .inspect cds
@@ -427,7 +429,7 @@ All of the empty properties mentioned earlier now have values.
 
 👉 Take a moment to explore these, with, for example:
 
-- `cds.model` (effectively the compiled model, in an internal CSN
+- `cds.model` (effectively the compiled model, in an internal CSN)
   representation
 - `cds.db === db` (yes, the database property points to the `db` service)
 - `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
@@ -440,6 +442,7 @@ understanding of the fundamentals. There are many ways of constructing and
 executing queries (see [Further info](#further-info)) - let's start with the
 REST-style API.
 
+#### Explore the REST-style API
 Let's read the details of the "Chai" product, using the `db` variable that's been
 made available to us.
 
@@ -522,7 +525,7 @@ Promise {
 }
 ```
 
-More gratification delay!
+More [gratification delay](https://en.wikipedia.org/wiki/Delayed_gratification)!
 
 As with most things in Node.js, execution is asynchronous. So we need to
 `await` the call:
@@ -547,8 +550,8 @@ Success!
 ]
 ```
 
-Actually, we can await the query directly, and the default behaviour is to do
-exactly this.
+Actually, we can await the query directly, and the default behaviour for such
+query objects is to be executed via `db.run`:
 
 👉 Let's try that:
 
@@ -556,7 +559,7 @@ exactly this.
 > await chai
 ```
 
-This gives us the same effect. Nice!
+This, therefore, gives us the same effect. Nice!
 
 ## Further info
 
