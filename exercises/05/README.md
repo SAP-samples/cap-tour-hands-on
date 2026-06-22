@@ -1,6 +1,6 @@
 # 05 - Exploring status-transition flows
 
-Released towards the end of 2025, status-transition flows moved us one step
+Released towards the end of 2025, status-transition flows moves us one step
 closer to declarative nirvana, and in the right direction with regards to
 LLM-based learning about CAP powered solutions, a smaller code surface area,
 and a shift left of logic and definitions.
@@ -28,16 +28,16 @@ narrowboats. These are known as "Morse" controls and enable gear selection
 (foward or reverse) and propeller rotation speed with a single control (see
 [Further info](#further-info) for more).
 
+As with other engines, there's also the neutral position that sits between
+forward and reverse gears, and a brief moment in neutral before engaging the
+opposite direction is always preferable so as not to put undue strain on the
+gearbox.
+
 ![Morse control on narrowboat FULLY
 RESTFUL](assets/morse-control-on-fully-restful.png)
 _The Morse control on [narrowboat FULLY
 RESTFUL](https://qmacro.org/tags/fullyrestful/), with the lever position in the
 centre (neutral)._
-
-As with other engines, there's also the neutral position that sits between
-forward and reverse gears, and a brief moment in neutral before engaging the
-opposite direction is always preferable so as not to put undue strain on the
-gearbox.
 
 ## Define the basic CDS model
 
@@ -82,9 +82,9 @@ Here's what we have:
 - a service exposing the `Controls` entity and giving it some bound action
   definitions `engageForward()`, `engageNeutral()` and `engageReverse()`
 
-This models the Morse control described earlier, and gives us the chance to
+This models the Morse control described earlier, and will give us the chance to
 implement a restriction so that we can't go directly from `Forward` to
-`Reverse` (or vice versa) without first being in `Neutral`.
+`Reverse` (or vice versa) without going through `Neutral` first.
 
 ## Try things out
 
@@ -220,14 +220,13 @@ Yikes!
 There are quite a few issues here:
 
 - we can create controls without being restricted on what gear is initially
-  selected (we want all new controls to have `Neutral` selected)
+  selected (we want all new controls to start out in `Neutral`)
 - we can switch gears directly without going through `Neutral`
-- we can't use the convenience actions to do anything, unless we write some
-  code
+- we can't use the convenience actions to do anything, as they're not
+  implemented, so we are likely to need to write some code
 
-In today's age, the last thing we want to do is create more code.
-
-So we should embrace what CAP's status-transition flows feature offers!
+In today's age, the last thing we want to do is create more code. So we should
+embrace what CAP's status-transition flows feature offers!
 
 ## Introduce status-transition flow annotations
 
@@ -235,7 +234,7 @@ All we need is a few annotations.
 
 👉 First, stop the CAP server.
 
-👉 Now let's add the annotations, at the end of the `services.cds`
+👉 Now add the annotations, at the end of the `services.cds`
 file[<sup>3</sup>](#footnotes):
 
 ```cds
@@ -255,12 +254,15 @@ annotate MorseService.Controls actions {
 👉 Stare at these annotations for a second, where it will become clear that:
 
 - `@flow.status` is an entity level annotation (on `MorseService.Controls`)
-  which identifies the element in that entity that is to act as the flow status
-  field (the `position` element in this case)
+  which identifies the element in that entity that is to represent the flow
+  status (the `position` element in this case)
 - each of the bound actions are also annotated with `@from` and `@to` pairs,
   showing the allowed status transitions that are effected by each action
+- There can be one or more allowed status for these `@from` and `@to`
+  annotations
 
-This second observation is worth expanding upon. It means that, explicitly:
+The observations on the `@from` and `@to` parts is worth expanding upon. It
+means that, explicitly:
 
 - `engageForward` will move a control's position to `Forward`, but only from a
   `Neutral` position
@@ -271,8 +273,8 @@ This second observation is worth expanding upon. It means that, explicitly:
 
 Finally, and implicitly:
 
-- there is no bound action that will take a control directly from `Forward` to
-  `Reverse` (or vice versa)
+- there is no bound action and thus no possible way to take a control
+  directly from `Forward` to `Reverse` (or vice versa)
 
 ## Retry control creation and manipulation
 
@@ -357,7 +359,8 @@ This should emit something like this, where the `@readonly` annotation is eviden
 
 ### Try updating control positions directly again
 
-This of course should also prevent us from updating control positions directly.
+This `@readonly` annotation should of course also prevent us from updating
+control positions directly.
 
 👉 Try it:
 
@@ -379,8 +382,8 @@ We get a big, subtle "nope!":
 }
 ```
 
-This silent refusal is consistent with design and documentation (see [Further
-info](#further-info)).
+This silent refusal is consistent with `@readonly`'s design and documentation
+(see [Further info](#further-info)).
 
 ### Enjoy the sudden availability of fully implemented bound actions
 
@@ -395,8 +398,7 @@ still in the `Neutral` position:
    --url 'localhost:4004/odata/v4/morse/Controls/1/engageForward'
 ```
 
-Oops! Of course, this is an action, implying side effects, which means HTTP
-POST is required.
+Oops!
 
 ```log
 HTTP/1.1 405 Method Not Allowed
@@ -410,6 +412,9 @@ OData-Version: 4.0
   }
 }
 ```
+
+Of course, this is an action, implying side effects, which means HTTP POST is
+required.
 
 👉 Let's try that again:
 
@@ -427,7 +432,7 @@ HTTP/1.1 204 No Content
 OData-Version: 4.0
 ```
 
-Clean and simple. But let's check anyway.
+Clean and simple. But let's double check anyway.
 
 👉 Have a look now at the control:
 
