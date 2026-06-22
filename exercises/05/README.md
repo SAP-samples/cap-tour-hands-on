@@ -70,6 +70,35 @@ shown here:
 ![switches](https://qmacro.org/images/2025/12/double-toggle-switch.jpg)
 ([Image courtesy of Wikimedia Commons](https://commons.wikimedia.org/wiki/File:A_double_toggle_light_switch.jpg)).
 
+## Try things out
+
+Is the model here enough? Let's see.
+
+👉 In one terminal window, start a CAP server with `cds watch`.
+
+👉 In a separate terminal window, experiment with the service as follows:
+
+- create a new switch:
+
+    ```bash
+    curl \
+      --header 'Content-Type: application/json'  \
+      --data '{"ID":1}'  \
+      --silent  \
+      --url 'localhost:4004/odata/v4/switch/Switches'
+    ```
+
+  this should give us something like this:
+
+  ```json
+  {"@odata.context":"$metadata#Switches/$entity","ID":1,"status":"Down"}
+  ```
+
+
+
+
+
+
 ## Further info
 
 - See [Shift left with
