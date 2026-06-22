@@ -89,28 +89,122 @@ implement a restriction so that we can't go directly from `Forward` to
 
 Is the model here enough? Let's see.
 
-👉 In one terminal window, start a CAP server with `cds watch`.
+👉 Open a second terminal window.
 
-👉 In a separate terminal window, experiment with the service as follows:
+👉 In the first, start a CAP server with `cds watch`.
 
-- create a new switch:
+👉 In the second, carry out the following experiments:
 
-    ```bash
-    curl \
-      --header 'Content-Type: application/json'  \
-      --data '{"ID":1}'  \
-      --silent  \
-      --url 'localhost:4004/odata/v4/switch/Switches'
-    ```
+Create a new control:
 
-  this should give us something like this:
+```bash
+curl \
+  --silent  \
+  --data '{"ID":1}'  \
+  --url 'localhost:4004/odata/v4/morse/Controls'
+```
 
-  ```json
-  {"@odata.context":"$metadata#Switches/$entity","ID":1,"status":"Down"}
-  ```
+This should return something like this (note the default position of `Neutral`):
 
+```json
+{
+  "@odata.context": "$metadata#Switches/$entity",
+  "ID": 1,
+  "position": "Neutral"
+}
+```
 
+Create another new control:
 
+```bash
+curl \
+  --silent  \
+  --data '{"ID":2,"position":"Forward"}'  \
+  --url 'localhost:4004/odata/v4/morse/Controls'
+```
+
+This also returns something similar:
+
+```json
+{
+  "@odata.context": "$metadata#Switches/$entity",
+  "ID": 2,
+  "position": "Forward"
+}
+```
+
+But - just like starting an engine with a forward gear selected - this is not a
+good idea and we probably want to prevent this from happening.
+
+Now try to move the first control from its current position to `Reverse`, using the
+appropriate action:
+
+```bash
+curl \
+  --request POST \
+  --include \
+  --url 'localhost:4004/odata/v4/morse/Controls/1/engageReverse'
+```
+
+Not entirely unexpectedly, we get an error:
+
+```log
+HTTP/1.1 501 Not Implemented
+OData-Version: 4.0
+Content-Type: application/json; charset=utf-8
+
+{
+  "error": {
+    "message": "Service \"MorseService\" has no handler for \"engageReverse MorseService.Controls\".",
+    "code": "501",
+    "@Common.numericSeverity": 4
+  }
+}
+```
+
+Of course, we're going to have to implement all these actions.
+
+Or are we?
+
+Let's try just updating the value of the `position` element:
+
+```bash
+curl \
+  --request PATCH \
+  --data '{"position":"Reverse"}' \
+  --silent \
+  --url 'localhost:4004/odata/v4/morse/Controls/1'
+```
+
+That worked - we got:
+
+```json
+{
+  "@odata.context": "$metadata#Controls/$entity",
+  "ID": 1,
+  "position": "Reverse"
+}
+```
+
+But is that what we really want? Because we can also slam the engine straight from `Reverse` into `Forward` without going through `Neutral`:
+
+```bash
+curl \
+  --request PATCH \
+  --data '{"position":"Forward"}' \
+  --silent \
+  --url 'localhost:4004/odata/v4/morse/Controls/1'
+```
+
+Yikes!
+
+```json
+{
+  "@odata.context": "$metadata#Controls/$entity",
+  "ID": 1,
+  "position": "Forward"
+}
+```
 
 
 
