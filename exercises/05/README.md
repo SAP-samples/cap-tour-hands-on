@@ -23,6 +23,21 @@ rm -rf proj-05 \
 We'll keep things simple so as not to distract from the feature we want to
 understand.
 
+The idea is to model a classic lever engine control as typically found on
+narrowboats. These are known as "Morse" controls and enable gear selection
+(foward or reverse) and propeller rotation speed with a single control (see
+[Further info](#further-info) for more).
+
+![Morse control on narrowboat FULLY
+RESTFUL](assets/morse-control-on-fully-restful.png)
+_The Morse control on
+narrowboat FULLY RESTFUL, with the lever position in the centre (neutral)._
+
+As with other engines, there's also the neutral position that sits between
+forward and reverse gears, and a brief moment in neutral before engaging the
+opposite direction is always preferable so as not to put undue strain on the
+gearbox.
+
 ## Define the CDS model
 
 👉 In a new file `services.cds`[<sup>1</sup>](#footnotes) in the project root,
@@ -31,27 +46,51 @@ add this:
 ```cds
 context codejam {
 
-  type Status : String enum {
-    Up;
-    Down;
+  type Position : String enum {
+    Forward;
+    Neutral;
+    Reverse;
   }
 
-  entity Switches {
-    key ID     : Integer;
-        status : Status default #Down;
+  entity Controls {
+    key ID       : Integer;
+        position : Position default #Neutral;
   }
 }
 
-service SwitchService {
+service MorseService {
 
-  entity Switches as projection on codejam.Switches
+  entity Controls as projection on codejam.Controls
 
     actions {
-      action flipUp();
-      action flipDown();
+      action engageForward();
+      action engageNeutral();
+      action engageReverse();
     };
 
+
+/*
+  annotate Controls with @flow.status: position;
+
+  annotate Controls actions {
+    engageForward  @from: #Neutral  @to: #Forward;
+    engageNeutral  @from: [
+      #Forward,
+      #Reverse
+    ]                               @to: #Neutral;
+    engageReverse  @from: #Neutral  @to: #Reverse;
+
+  };
+*/
+
 }
+
+/*
+annotate Switches with @flow.status: status actions {
+  flipUp               @from       : #Down  @to: #Up;
+  flipDown             @from       : #Up    @to: #Down;
+};
+*/
 ```
 
 Here's what we have:
@@ -101,6 +140,9 @@ Is the model here enough? Let's see.
 
 ## Further info
 
+- The Fitout Pontoon's page on [Engine
+  Controls](https://www.thefitoutpontoon.co.uk/engines-drive-gear/controls/)
+  has an overview of Morse lever controls.
 - See [Shift left with
   CAP](https://qmacro.org/blog/posts/2026/02/09/shift-left-with-cap/) for an
   explanation of the "shift left" idea.
