@@ -30,15 +30,16 @@ narrowboats. These are known as "Morse" controls and enable gear selection
 
 ![Morse control on narrowboat FULLY
 RESTFUL](assets/morse-control-on-fully-restful.png)
-_The Morse control on
-narrowboat FULLY RESTFUL, with the lever position in the centre (neutral)._
+_The Morse control on [narrowboat FULLY
+RESTFUL](https://qmacro.org/tags/fullyrestful/), with the lever position in the
+centre (neutral)._
 
 As with other engines, there's also the neutral position that sits between
 forward and reverse gears, and a brief moment in neutral before engaging the
 opposite direction is always preferable so as not to put undue strain on the
 gearbox.
 
-## Define the CDS model
+## Define the basic CDS model
 
 👉 In a new file `services.cds`[<sup>1</sup>](#footnotes) in the project root,
 add this:
@@ -89,7 +90,10 @@ implement a restriction so that we can't go directly from `Forward` to
 
 Is the model here enough? Let's see.
 
-👉 Start a CAP server with `cds watch`, and then open a second terminal window to carry out the following experiments.
+👉 Start a CAP server with `cds watch`, and then open a second terminal window
+to carry out the following experiments.
+
+### Create a new control
 
 👉 Create a new control:
 
@@ -109,6 +113,8 @@ This should return something like this (note the default position of `Neutral`):
   "position": "Neutral"
 }
 ```
+
+### Create another new control with a non-neutral initial position
 
 👉 Create another new control, this time setting the initial gear selection:
 
@@ -131,6 +137,8 @@ This also returns something similar:
 
 But - just like starting an engine with a forward gear selected - this is not a
 good idea and we probably want to prevent this from happening.
+
+### Try to use a bound action
 
 👉 Now try to move the first control from its current position to `Reverse`,
 using the appropriate action:
@@ -161,6 +169,8 @@ Content-Type: application/json; charset=utf-8
 Of course, we're going to have to implement all these actions.
 
 Or are we?
+
+### Try updating control positions directly
 
 👉 Let's try just updating the value of the `position` element directly:
 
@@ -205,6 +215,65 @@ Yikes!
 }
 ```
 
+## Consider the issues and the solution
+
+There are quite a few issues here:
+
+- we can create controls without being restricted on what gear is initially
+  selected (we want all new controls to have `Neutral` selected)
+- we can switch gears directly without going through `Neutral`
+- we can't use the convenience actions to do anything, unless we write some
+  code
+
+In today's age, the last thing we want to do is create more code.
+
+So we should embrace what CAP's status-transition flows feature offers!
+
+## Introduce status-transition flow annotations
+
+All we need is a few annotations.
+
+👉 Let's add them now, at the end of the `services.cds`
+file[<sup>3</sup>](#footnotes):
+
+```cds
+annotate MorseService.Controls with @flow.status: position;
+
+annotate MorseService.Controls actions {
+  engageForward  @from: #Neutral  @to: #Forward;
+  engageNeutral  @from: [
+    #Forward,
+    #Reverse
+  ]                               @to: #Neutral;
+  engageReverse  @from: #Neutral  @to: #Reverse;
+
+};
+```
+
+👉 Stare at these annotations for a second, where it will become clear that:
+
+- `@flow.status` is an entity level annotation (on `MorseService.Controls`)
+  which identifies the element in that entity that is to act as the flow status
+  field (the `position` element in this case)
+- each of the bound actions are also annotated with `@from` and `@to` pairs,
+  showing the allowed status transitions that are effected by each action
+
+This second observation is worth expanding upon. It means that, explicitly:
+
+- `engageForward` will move a control's position to `Forward`, but only from a
+  `Neutral` position
+- `engageReverse` will move a control's position to `Reverse`, but also only
+  from a `Neutral` position
+- `engageNeutral` will move a control's position to `Neutral` from either a
+  `Forward` or a `Reverse` position
+
+Finally, and implicitly:
+
+- there is no bound action that will take a control directly from `Forward` to
+  `Reverse` (or vice versa)
+
+## Retry control creation and manipulation
+
 
 
 ## Further info
@@ -235,3 +304,8 @@ Yikes!
    value, by using the `#` prefix - see the [Default
    Values](https://cap.cloud.sap/docs/cds/cdl#default-values) section of the
    CDL topic in Capire.
+1. We could have added these annotations within the `service MorseService { ...
+   }` block, so as not to need to specify the fully qualified names of the
+   annotation target (`MorseService.Controls`). But this way we have separation
+   of concerns and the annotations can be more cleanly discerned and separated
+   off into a different file if desired.
