@@ -68,46 +68,22 @@ service MorseService {
       action engageReverse();
     };
 
-
-/*
-  annotate Controls with @flow.status: position;
-
-  annotate Controls actions {
-    engageForward  @from: #Neutral  @to: #Forward;
-    engageNeutral  @from: [
-      #Forward,
-      #Reverse
-    ]                               @to: #Neutral;
-    engageReverse  @from: #Neutral  @to: #Reverse;
-
-  };
-*/
-
 }
-
-/*
-annotate Switches with @flow.status: status actions {
-  flipUp               @from       : #Down  @to: #Up;
-  flipDown             @from       : #Up    @to: #Down;
-};
-*/
 ```
 
 Here's what we have:
 
-- a `Status` type which, via the `enum` definition, has two possible values
-  `Up` and `Down` (think of a light switch)
-- a `Switches` entity definition, where each entity has an ID and a switch
-  "status", which by default (e.g. when a switch is created) is
-  `Down`[<sup>2</sup>](#footnotes)
-- a service exposing the `Switches` entity, and giving it a couple of bound
-  action definitions `flipUp()` and `flipDown()`
+- a `Status` type which, via the `enum` definition, has three possible values
+  `Forward`, `Neutral` and `Reverse`
+- a `Controls` entity definition, where each entity has an ID and a lever
+  "position", which by default (e.g. when a control is created) is at
+  `Neutral`[<sup>2</sup>](#footnotes)
+- a service exposing the `Controls` entity and giving it some bound action
+  definitions `engageForward()`, `engageNeutral()` and `engageReverse()`
 
-This more or less models a simple switch mechanism for us, like those
-shown here:
-
-![switches](https://qmacro.org/images/2025/12/double-toggle-switch.jpg)
-([Image courtesy of Wikimedia Commons](https://commons.wikimedia.org/wiki/File:A_double_toggle_light_switch.jpg)).
+This models the Morse control described earlier, and gives us the chance to
+implement a restriction so that we can't go directly from `Forward` to
+`Reverse` (or vice versa) without first being in `Neutral`.
 
 ## Try things out
 
