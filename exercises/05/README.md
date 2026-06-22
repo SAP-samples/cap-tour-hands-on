@@ -89,13 +89,9 @@ implement a restriction so that we can't go directly from `Forward` to
 
 Is the model here enough? Let's see.
 
-👉 Open a second terminal window.
+👉 Start a CAP server with `cds watch`, and then open a second terminal window to carry out the following experiments.
 
-👉 In the first, start a CAP server with `cds watch`.
-
-👉 In the second, carry out the following experiments:
-
-Create a new control:
+👉 Create a new control:
 
 ```bash
 curl \
@@ -114,7 +110,7 @@ This should return something like this (note the default position of `Neutral`):
 }
 ```
 
-Create another new control:
+👉 Create another new control, this time setting the initial gear selection:
 
 ```bash
 curl \
@@ -136,8 +132,8 @@ This also returns something similar:
 But - just like starting an engine with a forward gear selected - this is not a
 good idea and we probably want to prevent this from happening.
 
-Now try to move the first control from its current position to `Reverse`, using the
-appropriate action:
+👉 Now try to move the first control from its current position to `Reverse`,
+using the appropriate action:
 
 ```bash
 curl \
@@ -166,7 +162,7 @@ Of course, we're going to have to implement all these actions.
 
 Or are we?
 
-Let's try just updating the value of the `position` element:
+👉 Let's try just updating the value of the `position` element directly:
 
 ```bash
 curl \
@@ -186,7 +182,10 @@ That worked - we got:
 }
 ```
 
-But is that what we really want? Because we can also slam the engine straight from `Reverse` into `Forward` without going through `Neutral`:
+But is that what we really want? Because we can also slam the engine straight
+from `Reverse` into `Forward` without going through `Neutral`.
+
+👉 Try it:
 
 ```bash
 curl \
