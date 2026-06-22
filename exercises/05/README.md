@@ -233,7 +233,9 @@ So we should embrace what CAP's status-transition flows feature offers!
 
 All we need is a few annotations.
 
-👉 Let's add them now, at the end of the `services.cds`
+👉 First, stop the CAP server.
+
+👉 Now let's add the annotations, at the end of the `services.cds`
 file[<sup>3</sup>](#footnotes):
 
 ```cds
@@ -274,7 +276,244 @@ Finally, and implicitly:
 
 ## Retry control creation and manipulation
 
+It's time to try our our declarative solution.
 
+👉 First, re-start the CAP server with `cds watch`.
+
+### Create a new control again
+
+👉 Now create a new first control:
+
+```bash
+curl \
+  --silent  \
+  --data '{"ID":1}'  \
+  --url 'localhost:4004/odata/v4/morse/Controls'
+```
+
+Success:
+
+```json
+{
+  "@odata.context": "$metadata#Controls/$entity",
+  "ID": 1,
+  "position": "Neutral"
+}
+```
+
+Actually, the equivalent of this first test was also successful last time. What
+about creating a control with a different initial position?
+
+### Create another new control with a non-neutral initial position again
+
+👉 Try it:
+
+```bash
+curl \
+  --silent  \
+  --data '{"ID":2,"position":"Forward"}'  \
+  --url 'localhost:4004/odata/v4/morse/Controls'
+```
+
+Ooh! We get a control back, but with an initial position of `Neutral`:
+
+```json
+{
+  "@odata.context": "$metadata#Controls/$entity",
+  "ID": 2,
+  "position": "Neutral"
+}
+```
+
+That's because the element pointed to by the `@flow.status` annotation has also
+been automatically given a `@readonly` annotation too.
+
+👉 Check that by looking at the CSN for the model:
+
+```bash
+cds c . \
+  | jq '.definitions["MorseService.Controls"].elements'
+```
+
+This should emit something like this, where the `@readonly` annotation is evident:
+
+```json
+{
+  "ID": {
+    "key": true,
+    "type": "cds.Integer"
+  },
+  "position": {
+    "type": "codejam.Position",
+    "default": {
+      "#": "Neutral",
+      "val": "Neutral"
+    },
+    "@flow.status": true,
+    "@readonly": true
+  }
+}
+```
+
+### Try updating control positions directly again
+
+This of course should also prevent us from updating control positions directly.
+
+👉 Try it:
+
+```bash
+curl \
+  --request PATCH \
+  --data '{"position":"Reverse"}' \
+  --silent \
+  --url 'localhost:4004/odata/v4/morse/Controls/1'
+```
+
+We get a big, subtle "nope!":
+
+```json
+{
+  "@odata.context": "$metadata#Controls/$entity",
+  "ID": 1,
+  "position": "Neutral"
+}
+```
+
+This silent refusal is consistent with design and documentation (see [Further
+info](#further-info)).
+
+### Enjoy the sudden availability of fully implemented bound actions
+
+Annotating the actions has also brought about some magic.
+
+👉 First, let's try the `engageForward()` action with our control, which is
+still in the `Neutral` position:
+
+```bash
+ curl \
+   --include \
+   --url 'localhost:4004/odata/v4/morse/Controls/1/engageForward'
+```
+
+Oops! Of course, this is an action, implying side effects, which means HTTP
+POST is required.
+
+```log
+HTTP/1.1 405 Method Not Allowed
+OData-Version: 4.0
+
+{
+  "error": {
+    "message": "Method Not Allowed",
+    "code": "405",
+    "@Common.numericSeverity": 4
+  }
+}
+```
+
+👉 Let's try that again:
+
+```bash
+ curl \
+   --request POST \
+   --include \
+   --url 'localhost:4004/odata/v4/morse/Controls/1/engageForward'
+```
+
+We get:
+
+```log
+HTTP/1.1 204 No Content
+OData-Version: 4.0
+```
+
+Clean and simple. But let's check anyway.
+
+👉 Have a look now at the control:
+
+```bash
+curl \
+  --url 'localhost:4004/odata/v4/morse/Controls/1'
+```
+
+Yep, that worked:
+
+```json
+{
+  "@odata.context": "$metadata#Controls/$entity",
+  "ID": 1,
+  "position": "Forward"
+}
+```
+
+What about the restrictions implicit in the bound action annotations?
+
+👉 Try moving the control, now in a `Forward` position, directly to `Reverse`:
+
+```bash
+curl \
+  --request POST \
+  --include \
+  --url 'localhost:4004/odata/v4/morse/Controls/1/engageReverse'
+```
+
+Excellent - we are prevented from damaging the engine gearbox:
+
+```log
+HTTP/1.1 409 Conflict
+OData-Version: 4.0
+Content-Type: application/json; charset=utf-8
+
+{
+  "error": {
+    "message": "Action \"engageReverse\" requires \"position\" to be \"[\"Neutral\"]\".",
+    "code": "INVALID_FLOW_TRANSITION_SINGLE",
+    "@Common.numericSeverity": 4
+  }
+}
+```
+
+## Revisit the annotations
+
+To wrap up this exercise, let's revisit the annotations briefly and modify how
+they're expressed, to be closer to what we might see in documentation.
+
+The annotations currently look like this:
+
+```cds
+annotate MorseService.Controls with @flow.status: position;
+
+annotate MorseService.Controls actions {
+  engageForward  @from: #Neutral  @to: #Forward;
+  engageNeutral  @from: [
+    #Forward,
+    #Reverse
+  ]                               @to: #Neutral;
+  engageReverse  @from: #Neutral  @to: #Reverse;
+
+};
+```
+
+Often, we'll see status-transition flow annotations combined, as it's very
+common to identify the flow status element and also define the from and to
+status values in one go.
+
+👉 Rewrite the annotations so they look like this:
+
+```cds
+annotate MorseService.Controls with @flow.status: position actions {
+  engageForward  @from: #Neutral  @to: #Forward;
+  engageNeutral  @from: [
+    #Forward,
+    #Reverse
+  ]                               @to: #Neutral;
+  engageReverse  @from: #Neutral  @to: #Reverse;
+};
+```
+
+This is just a more succinct way of expressing two annotations on the same
+target (`MorseService.Controls`). It's worth just staring at this for a moment
+to understand what's going on (see [Further info](#further-info)).
 
 ## Further info
 
@@ -292,7 +531,14 @@ Finally, and implicitly:
   the Releases topic in Capire for more info.
 - For a dive into status-transition flows, see [A simple exploration of status
   transition flows in
-  CAP](https://qmacro.org/blog/posts/2025/12/08/a-simple-exploration-of-status-transition-flows-in-cap/)
+  CAP](https://qmacro.org/blog/posts/2025/12/08/a-simple-exploration-of-status-transition-flows-in-cap/),
+  which also [digs in to the
+  annotations](https://qmacro.org/blog/posts/2025/12/08/a-simple-exploration-of-status-transition-flows-in-cap/#digging-in-to-the-annotation)
+  and how they're expressed
+- See the
+  [@readonly](https://cap.cloud.sap/docs/guides/services/constraints#readonly)
+  section of Capire's Declarative Constraints topic for details on how the
+  annotation works.
 
 ---
 
