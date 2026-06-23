@@ -398,6 +398,219 @@ that was automatically started.
 We can feel comfortable that this situation is just like we experienced in
 the cds REPL.
 
+### Add a first test
+
+Now that we have everything in place, let's add a first test.
+
+👉 Inside the `describe` block in `test/transitions.test.js`, add this:
+
+```javascript
+  it('initially returns an empty list', async () => {
+    const { data } = await GET('Controls')
+    expect(data.value).to.deep.equal([])
+  })
+```
+
+Here are some notes on this test definition:
+
+- `it` defines a test name and a function that holds the expectation(s) that
+  should be tested
+- the expectation to be tested relates to what's returned from fetching the
+  `/odata/v4/morse/Controls` resource; the `GET` mechanism makes this response
+  payload available in the `data` object which we grab via destructuring
+- the expectation here is what we are going to get is an empty list (`[]`)
+- we refer to `data.value` in the expectation as - in the resource that's
+  returned[<sup>2</sup>](#footnotes) - it's the `value` property that has the
+  actual data
+- the `deep` part of the expectation relates to the fact that `[]` does not
+  equal `[]`, and so we need a special library for such comparisons (see
+  [Further info](#further-info) for a link to a the library and also a classic
+  talk on the quirks of JavaScript)
+
+### Re-invoke the test runner
+
+👉 Now that we have an actual test, let's re-invoke the test runner:
+
+```bash
+cds test --unmute
+```
+
+We get output like this:
+
+```log
+[cds] - loaded model from 1 file(s):
+
+...
+
+[cds] - serving Morse {
+  at: [ '/odata/v4/morse' ],
+  decl: 'services.cds:15'
+}
+[cds] - server listening on { url: 'http://localhost:37143' }
+[cds] - server v9.9.1 launched in 4332 ms
+[odata] - GET /odata/v4/morse/Controls
+
+  Initial controls
+    ✔ initially returns an empty list
+
+ 1 passed
+ 4.631s
+```
+
+We can see that the test server was started again. We can see evidence of the
+GET request for the `Controls` entityset (`[odata] - GET
+/odata/v4/morse/Controls`).
+
+We can also see that the test passed; it's shown with its name ("initially
+returns an empty list") within its containing group ("Initial controls").
+
+Great!
+
+> From now on, we'll omit the `--unmute` option as we now know what's going on,
+> and it will be easier to discern the test results without the extra noise.
+
+### Add more tests to the group
+
+Let's add some more simple tests to the "Initial controls" test group.
+
+Edit the test group (`describe( ... )`) so that it now looks like this:
+
+```javascript
+describe('Initial controls', () => {
+
+  it('initially returns an empty list', async () => {
+    const { data } = await GET('Controls')
+    expect(data.value).to.deep.equal([])
+  })
+
+  it('allows the creation of new controls', async () => {
+    const { status } = await POST('Controls', { ID: 1 })
+    expect(status).to.equal(201)
+  })
+
+  it('gives new controls a Neutral default position', async () => {
+    const { data } = await POST('Controls', { ID: 2 })
+    expect(data.position).to.equal('Neutral')
+  })
+
+  it('prevents positions being specified on creation', async () => {
+    const { data } = await POST('Controls', { ID: 3, position: "Random" })
+    expect(data.position).to.equal('Neutral')
+  })
+
+})
+```
+
+### Re-invoke the test runner again
+
+If we now invoke the test runner, we should see each of the tests executed.
+
+👉 Let's do that now:
+
+```bash
+cds test
+```
+
+The output should look something like this:
+
+```log
+  Initial controls
+    ✔ initially returns an empty list
+    ✔ allows the creation of new controls
+    ✔ gives new controls a Neutral default position
+    ✔ prevents positions being specified on creation
+
+ 4 passed
+ 0.846s
+```
+
+Excellent!
+
+### Add one more test group
+
+We can continue to add tests, grouped logically.
+
+Let's add one more group of tests relating to the checking of what the
+status-transition flow restrictions bring about.
+
+👉 Add this new test group to the end of the `test/transitions.test.js` file:
+
+```javascript
+describe('Transitions', () => {
+
+  it('allows moving from Neutral to Forward', async () => {
+    const { status } = await POST('Controls/1/engageForward')
+    expect(status).to.equal(204)
+  })
+
+  it('tracks the position after engagement', async () => {
+    const { data } = await GET('Controls/1')
+    expect(data.position).to.equal('Forward')
+  })
+
+  it('prevents moving from Forward directly to Reverse', async () => {
+    const { data } = await POST(
+      'Controls/1/engageReverse',
+      null,
+      { validateStatus: status => status == 409 }
+    )
+    expect(data.error.code).to.equal('INVALID_FLOW_TRANSITION_SINGLE')
+  })
+
+  it('allows moving from Forward to Neutral', async () => {
+    const { status } = await POST('Controls/1/engageNeutral')
+    expect(status).to.equal(204)
+  })
+
+  it('allows moving from Neutral to Reverse', async () => {
+    const { status } = await POST('Controls/1/engageReverse')
+    expect(status).to.equal(204)
+  })
+
+})
+```
+
+> Here's a note on the test "prevents moving from Forward directly to Reverse".
+>
+> The testing mechanisms in use will abort and cause the test to fail if the HTTP
+> response code is unexpected. What's expected is any code that fits in to the
+> default condition which is `status >= 200 && status < 300`. We actually _want_
+> a 409 response code ("Conflict") so pass a custom definition of
+> `validateStatus` as a third argument to `POST()` (the second argument is to
+> convey any payload for the call, but there is no payload for this action
+> invocation).
+
+### Invoke the test runner one last time
+
+Let's see where we are with our tests.
+
+👉 Invoke the runner:
+
+```bash
+cds test
+```
+
+We should see output like this:
+
+```log
+  Initial controls
+    ✔ initially returns an empty list
+    ✔ allows the creation of new controls
+    ✔ gives new controls a Neutral default position
+    ✔ prevents positions being specified on creation
+
+  Transitions
+    ✔ allows moving from Neutral to Forward
+    ✔ tracks the position after engagement
+    ✔ prevents moving from Forward directly to Reverse
+    ✔ allows moving from Forward to Neutral
+    ✔ allows moving from Neutral to Reverse
+
+ 9 passed
+ 0.702s
+```
+
+If you do, well done!
 
 ## Further info
 
@@ -406,6 +619,11 @@ the cds REPL.
   read.
 - Read more about the [Chai Assertion Library](https://www.chaijs.com/)
   portable across various JavaScript testing frameworks.
+- Gary Bernhardt's classic lightning talk
+  [Wat](https://www.destroyallsoftware.com/talks/wat) is great, regardless of
+  your views on JavaScript (and Ruby[<sup>3</sup>](#footnotes)) :-)
+- The [deep-eql](https://github.com/chaijs/deep-eql) library is used by Chai
+  for non-trivial and / or reference-laden comparisons
 
 ---
 
@@ -421,3 +639,23 @@ the cds REPL.
       }
     }
     ```
+
+1. The resource requested is an OData v4 entityset, and the default
+   representation is in JSON:
+
+    ```bash
+    ; curl localhost:4004/odata/v4/morse/Controls
+    {
+      "@odata.context": "$metadata#Controls",
+      "value": []
+    }
+    ```
+
+1. As you'll see in the talk, Ruby has an lovely `method_missing` construct,
+   similar to Smalltalk's `#doesNotUnderstand` which is amongst the many
+   wonderful influences for CAP - see the [Everything is a
+   service](https://qmacro.org/blog/posts/2024/12/10/tasc-notes-part-4/#everything-is-a-service)
+   section of [the notes to The Art and Science of CAP part
+   4](https://qmacro.org/blog/posts/2024/12/10/tasc-notes-part-4/).
+1. See <https://github.com/axios/axios> and specifically the default
+   implementation of `validateStatus`.
