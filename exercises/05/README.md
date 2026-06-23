@@ -59,7 +59,7 @@ context codejam {
   }
 }
 
-service MorseService {
+service Morse {
 
   entity Controls as projection on codejam.Controls
 
@@ -159,7 +159,7 @@ Content-Type: application/json; charset=utf-8
 
 {
   "error": {
-    "message": "Service \"MorseService\" has no handler for \"engageReverse MorseService.Controls\".",
+    "message": "Service \"Morse\" has no handler for \"engageReverse Morse.Controls\".",
     "code": "501",
     "@Common.numericSeverity": 4
   }
@@ -238,9 +238,9 @@ All we need is a few annotations.
 file[<sup>3</sup>](#footnotes):
 
 ```cds
-annotate MorseService.Controls with @flow.status: position;
+annotate Morse.Controls with @flow.status: position;
 
-annotate MorseService.Controls actions {
+annotate Morse.Controls actions {
   engageForward  @from: #Neutral  @to: #Forward;
   engageNeutral  @from: [
     #Forward,
@@ -253,7 +253,7 @@ annotate MorseService.Controls actions {
 
 👉 Stare at these annotations for a second, where it will become clear that:
 
-- `@flow.status` is an entity level annotation (on `MorseService.Controls`)
+- `@flow.status` is an entity level annotation (on `Morse.Controls`)
   which identifies the element in that entity that is to represent the flow
   status (the `position` element in this case)
 - each of the bound actions are also annotated with `@from` and `@to` pairs,
@@ -334,7 +334,7 @@ been automatically given a `@readonly` annotation too.
 
 ```bash
 cds c . \
-  | jq '.definitions["MorseService.Controls"].elements'
+  | jq '.definitions["Morse.Controls"].elements'
 ```
 
 This should emit something like this, where the `@readonly` annotation is evident:
@@ -486,9 +486,9 @@ they're expressed, to be closer to what we might see in documentation.
 The annotations currently look like this:
 
 ```cds
-annotate MorseService.Controls with @flow.status: position;
+annotate Morse.Controls with @flow.status: position;
 
-annotate MorseService.Controls actions {
+annotate Morse.Controls actions {
   engageForward  @from: #Neutral  @to: #Forward;
   engageNeutral  @from: [
     #Forward,
@@ -506,7 +506,7 @@ status values in one go.
 👉 Rewrite the annotations so they look like this:
 
 ```cds
-annotate MorseService.Controls with @flow.status: position actions {
+annotate Morse.Controls with @flow.status: position actions {
   engageForward  @from: #Neutral  @to: #Forward;
   engageNeutral  @from: [
     #Forward,
@@ -517,7 +517,7 @@ annotate MorseService.Controls with @flow.status: position actions {
 ```
 
 This is just a more succinct way of expressing two annotations on the same
-target (`MorseService.Controls`). It's worth just staring at this for a moment
+target (`Morse.Controls`). It's worth just staring at this for a moment
 to understand what's going on (see [Further info](#further-info)).
 
 ## Further info
@@ -555,8 +555,8 @@ to understand what's going on (see [Further info](#further-info)).
    value, by using the `#` prefix - see the [Default
    Values](https://cap.cloud.sap/docs/cds/cdl#default-values) section of the
    CDL topic in Capire.
-1. We could have added these annotations within the `service MorseService { ...
+1. We could have added these annotations within the `service Morse { ...
    }` block, so as not to need to specify the fully qualified names of the
-   annotation target (`MorseService.Controls`). But this way we have separation
+   annotation target (`Morse.Controls`). But this way we have separation
    of concerns and the annotations can be more cleanly discerned and separated
    off into a different file if desired.
