@@ -15,6 +15,7 @@ RUN apt-get update \
   && apt-get -y install --no-install-recommends \
   cf8-cli \
   curl \
+  entr \
   git \
   sqlite3 \
   bat \
