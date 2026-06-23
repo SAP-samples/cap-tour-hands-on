@@ -132,6 +132,10 @@ Test {}
 Look familiar? Sure, it's a CAP server in the equivalent of `watch` mode,
 listening on a random port.
 
+> You may not see a cds REPL prompt (`>`) at this point, that's just because
+> the prompt did appear, but then was obscured by the CAP server log output.
+> Just hit `<Enter>` to get to a prompt if this is the case.
+
 So far so good.
 
 👉 Exit the cds REPL (with `Ctrl-D`).
@@ -147,19 +151,80 @@ instead of that ceremony, in the form of `cds.test()`.
 cds repl
 ```
 
-👉 and try that out:
+👉 Let's relaunch a test server, but at the same time, use destructuring to get
+access to some of the features that the test mechanism offers:
 
 ```javascript
-cds.test()
+const { GET, POST, defaults, expect } = cds.test()
 ```
 
 The project directory location can be specified as the first argument, but the
 default is the current directory, which is what we want. We get pretty much the
 same output as before (just the random port will most likely be different!).
 
-> You may not see a cds REPL prompt (`>`) at this point, that's just because
-> the prompt did appear, but then was obscured by the CAP server log output.
-> Just hit `<Enter>` to get to a prompt if this is the case.
+### Set some defaults
+
+What we have in the destructured items are conveniences for testing.
+
+We can see from the test server output that our service is being provided via
+the default protocol (OData v4) and the path is default too:
+
+```text
+/odata/v4/morse
+```
+
+We know from the previous exercise that we have the `Controls` entity, so we
+can use the `GET` feature to request the entityset.
+
+👉 Do that now:
+
+```javascript
+await GET `/odata/v4/morse/Controls`
+```
+
+The output we see is from the `GET` mechanism provided from the test mechanism,
+and is a `Response` object that looks like this:
+
+```javascript
+Response {
+  status: 200,
+  statusText: 'OK',
+  headers: Headers {
+    'x-powered-by': 'Express',
+    'x-correlation-id': '8d684204-38ad-4e2e-9b93-03b69ac345f2',
+    'odata-version': '4.0',
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': '50',
+    date: 'Tue, 23 Jun 2026 10:03:52 GMT',
+    connection: 'keep-alive',
+    'keep-alive': 'timeout=5'
+  },
+  body: ReadableStream { locked: true, state: 'closed', supportsBYOB: true },
+  bodyUsed: true,
+  ok: true,
+  redirected: false,
+  type: 'basic',
+  url: 'http://localhost:41083/odata/v4/morse/Controls'
+}
+```
+
+Specifying the full path each time would get a little tiresome, so we can use
+the `defaults` also surfaced to us, and specify a default path.
+
+👉 Do that now:
+
+```javascript
+defaults.path = '/odata/v4/morse'
+```
+
+👉 Now retry that, in short form:
+
+```javascript
+await GET `Controls`
+```
+
+Much nicer.
+
 
 
 
