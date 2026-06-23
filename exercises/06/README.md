@@ -155,14 +155,14 @@ cds repl
 access to some of the features that the test mechanism offers:
 
 ```javascript
-const { GET, POST, defaults, expect } = cds.test()
+const { GET, POST, defaults } = cds.test()
 ```
 
 The project directory location can be specified as the first argument, but the
 default is the current directory, which is what we want. We get pretty much the
 same output as before (just the random port will most likely be different!).
 
-### Set some defaults
+### Try a first test request
 
 What we have in the destructured items are conveniences for testing.
 
@@ -193,9 +193,8 @@ Response {
     'x-powered-by': 'Express',
     'x-correlation-id': '8d684204-38ad-4e2e-9b93-03b69ac345f2',
     'odata-version': '4.0',
-    'content-type': 'application/json; charset=utf-8',
-    'content-length': '50',
-    date: 'Tue, 23 Jun 2026 10:03:52 GMT',
+    'content-type': 'application/json; charset=utf-8', 'content-length': '50',
+    date: '...',
     connection: 'keep-alive',
     'keep-alive': 'timeout=5'
   },
@@ -208,8 +207,11 @@ Response {
 }
 ```
 
+### Take advantage of the defaults object
+
 Specifying the full path each time would get a little tiresome, so we can use
-the `defaults` also surfaced to us, and specify a default path.
+`defaults` which we also picked out in the destructuring, and specify a default
+path.
 
 👉 Do that now:
 
@@ -223,16 +225,178 @@ defaults.path = '/odata/v4/morse'
 await GET `Controls`
 ```
 
-Much nicer.
+Much nicer!
 
+### Try a POST test request
 
+As well as the `GET` affordance, we picked out `POST` when we invoked
+`cds.test()`, so let's try that out too.
 
+👉 Make an HTTP POST request to convey an OData Create operation, specifying
+the payload (`{ID:1}`), and capturing a couple of the items that `POST`
+returns, i.e. the `status` and `data`:
 
+```javascript
+{ status, data } = await POST('Controls', {ID:1})
+```
 
+Here's what this emits:
 
+```log
+[odata] - POST /odata/v4/morse/Controls
+Response {
+  status: 201,
+  statusText: 'Created',
+  headers: Headers {
+    'x-powered-by': 'Express',
+    'x-correlation-id': '6be73e96-1ba8-4b21-919c-80573f7bbf66',
+    'odata-version': '4.0',
+    location: 'Controls(1)',
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': '75',
+    date: 'Tue, 23 Jun 2026 12:18:06 GMT',
+    connection: 'keep-alive',
+    'keep-alive': 'timeout=5'
+  },
+  body: ReadableStream { locked: true, state: 'closed', supportsBYOB: true },
+  bodyUsed: true,
+  ok: true,
+  redirected: false,
+  type: 'basic',
+  url: 'http://localhost:38939/odata/v4/morse/Controls'
+}
+```
 
+👉 Let's have a look what we got:
 
+```javascript
+[status, data]
+```
 
+Nice - it's the response status and payload (as we'd sort of expect):
+
+```javascript
+[
+  201,
+  {
+    '@odata.context': '$metadata#Controls/$entity',
+    ID: 1,
+    position: 'Neutral'
+  }
+]
+```
+
+## Build a series of tests
+
+Now that we've got a feel for the support for testing, let's create our first
+test. Traditionally these files are like normal language-based files except
+they have a `.test` inserted just before the extension.
+
+Also traditionally, the test support package will look in a `test/` directory.
+
+### Create a test file
+
+👉 Create `transitions.test.js` in a new `test/` directory, with the following
+content:
+
+```javascript
+const cds = require('@sap/cds')
+const { GET, POST, defaults, expect } = cds.test('.')
+defaults.path = '/odata/v4/morse'
+
+describe('Initial controls', () => {
+
+})
+```
+
+This is a simple harness for our tests.
+
+👉 Take a moment to see what differs from our explorations in the cds REPL
+earlier:
+
+- we also bring in `expect` in the destructuring, which gives us the common
+  test building block from the Chai Assertion Library (see [Further
+  info](#further-info))
+- the argument to `cds.test()` is `.`, i.e. "this current (project) directory",
+  so as to be more explicit
+- as is traditional, we're using `describe` to create a (named) "group" for
+  tests that logically belong together
+
+### Invoke the test runner to check the file
+
+Actually, we should think about this testing context in two parts - the test
+definitions themselves, and the test runner that executes the test definitions
+and reports on the results.
+
+We have a choice of test runner (see the [Running
+Tests](https://cap.cloud.sap/docs/node.js/cds-test#running-tests) section of
+the "Testing with cds.test" topic linked in [Further info](#further-info));
+we'll use CAP's `cds test` - a thin wrapper around Node.js's built-in test
+runner, which makes it easier to fetch tests and provides a cleaner output.
+
+As we've installed the requisite `@cap-js/cds-test` package, we can invoke `cds
+test`.
+
+👉 Let's do that now, with the `--list` option to make sure that it can find
+our test file:
+
+```bash
+cds test --list
+```
+
+```log
+Found these matching test files:
+
+   test/transitions.test.js
+
+ 1 total
+```
+
+Yup.
+
+### Execute the (non-existent) tests
+
+It's worth seeing what happens when we request the tests to be run. The `cds
+test` command has an `--unmute` option, which will stop the suppression of
+output that we would not normally want when running the tests for real (for
+example in a Continuous Integration (CI) scenario).
+
+But as we're just starting out, that's what we'll use initially.
+
+👉 Let's try that now:
+
+```bash
+cds test --unmute
+```
+
+We see something like this:
+
+```log
+[cds] - loaded model from 1 file(s):
+
+  services.cds
+
+[cds] - connect to db > sqlite { url: ':memory:' }
+/> successfully deployed to in-memory database.
+
+[cds] - using auth strategy { kind: 'mocked' }
+[cds] - serving Morse {
+  at: [ '/odata/v4/morse' ],
+  decl: 'services.cds:15'
+}
+[cds] - server listening on { url: 'http://localhost:45211' }
+[cds] - server v9.9.1 launched in 640 ms
+
+ 0.720s
+
+```
+
+Nothing unfamiliar, which is a good sign! In case you're wondering, the
+`0.720s` measurement is from the test runner itself, not from the test server
+that was automatically started.
+
+We can feel comfortable that this situation is just like we experienced in
+the cds REPL.
 
 
 ## Further info
@@ -240,6 +404,8 @@ Much nicer.
 - The [Testing with cds.test](https://cap.cloud.sap/docs/node.js/cds-test)
   topic in Capire has some really helpful sections and is definitely worth a
   read.
+- Read more about the [Chai Assertion Library](https://www.chaijs.com/)
+  portable across various JavaScript testing frameworks.
 
 ---
 
