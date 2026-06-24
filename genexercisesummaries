@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+exercises() {
+
+  find exercises/ \
+    -mindepth 1 \
+    -maxdepth 1 \
+    -type d \
+    | sort
+
+}
+
+main() {
+
+  for e in $(exercises); do
+    filename="$e/README.md"
+    # Format into a bullet point with a hyperlink
+    # and the rest as indented paragraphs.
+    cat "$filename" \
+      | sed -E '1s/^# //;/^## /,$d' \
+      | sed -E "1s,(.+),- [\1]("$filename")," \
+      | sed -E '3,$s/^/    /' \
+      | sed -E 's/^ +$//'
+
+  done
+
+}
+
+main "$@"
