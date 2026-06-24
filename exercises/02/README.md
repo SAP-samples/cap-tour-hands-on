@@ -1,19 +1,14 @@
 # 02 - Mocking messaging
 
-In [Five reasons to use
-CAP](https://qmacro.org/blog/posts/2024/11/07/five-reasons-to-use-cap/), we see
-that [everything is an
-event](https://qmacro.org/blog/posts/2024/11/07/five-reasons-to-use-cap/#:~:text=%22Everything%20is%20an%20event%22).
+In the blog post "Five reasons to use CAP" we see that everything is an event.
 Whether synchronous, such as via HTTP requests and responses for OData
 operations, or asynchronous, where messages are emitted and received for
 decoupled service-to-service communications.
 
-The [Messaging](https://cap.cloud.sap/docs/node.js/messaging) topic in Capire
-has a great overview and an explanation of all the different message brokers
-that can be used. And there's one that is well suited for local-first
-development: [File based
-messaging](https://cap.cloud.sap/docs/node.js/messaging#file-based), which
-we'll explore in this exercise.
+The Messaging topic in Capire has a great overview and an explanation of all
+the different message brokers that can be used. And there's one that is well
+suited for local-first development: file based messaging, which we'll explore
+in this exercise.
 
 ## Create a containing project directory with NPM workspaces enabled
 
@@ -483,6 +478,15 @@ cat ~/.cds-msg-box
 ```
 
 Nothing! The event record has gone. As we'd hoped and expected.
+
+## Further info
+
+- The blog post [Five reasons to use
+  CAP](https://qmacro.org/blog/posts/2024/11/07/five-reasons-to-use-cap/)
+  includes some thoughts on how [everything is an
+  event](https://qmacro.org/blog/posts/2024/11/07/five-reasons-to-use-cap/#:~:text=%22Everything%20is%20an%20event%22).
+- See the [Messaging](https://cap.cloud.sap/docs/node.js/messaging) topic in
+  Capire for all the details, including a list of all brokers.
 
 ---
 

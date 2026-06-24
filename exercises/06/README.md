@@ -1,9 +1,8 @@
 # 06 - Testing your services
 
-In the previous exercise we checked the behaviour of our `Morse` service
-definition by running `curl` commands to send HTTP requests to the CAP server
-which we started with `cds watch`. This is a great way to interact, but no the
-only one.
+In the previous exercise we checked the behaviour of our service
+definition by starting the CAP server and then manually sending HTTP requests
+to it. This is a great way to interact, but no the only one.
 
 In this exercise we'll add tests which will put our service through its paces.
 We'll do that first by exploring in the cds REPL and then formalising our

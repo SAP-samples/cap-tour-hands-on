@@ -5,11 +5,8 @@ closer to declarative nirvana, and in the right direction with regards to
 LLM-based learning about CAP powered solutions, a smaller code surface area,
 and a shift left of logic and definitions.
 
-At the time of writing, this feature is now maturing and is currently in Gamma
-status.
-
-Let's get a feel for status-transition flows by exploring a simple
-implementation.
+In this exercise we'll get a feel for status-transition flows by exploring a
+simple implementation.
 
 ## Create a new project
 

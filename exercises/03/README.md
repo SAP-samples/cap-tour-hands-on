@@ -3,7 +3,7 @@
 The plugin concept is fundamental to the CAP framework. Not only as a clean and
 simple extension mechanism, but also a core building block in the framework
 itself. Various basic components in CAP are implemented as plugins, as well as
-[many additional features](https://cap.cloud.sap/docs/plugins/).
+many additional features.
 
 In this exercise we'll implement a simple plugin so that we understand how
 they're put together and how they work.

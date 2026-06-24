@@ -6,7 +6,8 @@ is built on solid foundations and practices that have matured over the decades,
 and the REPL is part of that, first appearing in the 1960's and initially
 popularised in the LISP and LISP-derivative language communities.
 
-Node.js has a REPL, and it is upon this REPL that the cds REPL is based.
+Node.js has a REPL, and it is upon this REPL that the cds REPL is based. In this
+exercise, we'll explore the cds REPL.
 
 ## Start a new CAP project
 

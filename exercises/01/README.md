@@ -4,6 +4,8 @@ With the mocked authentication strategy, we can embrace and work on the
 important aspect of securing our app or service right from the very start. CAP
 makes it easy to do the right things here.
 
+In this exercise we'll look at how we can do that, based on a simple service.
+
 ## Start a new CAP project
 
 👉 Use the "base project"[<sup>1</sup>](#footnotes) as a starting point and create
