@@ -278,11 +278,10 @@ annotate Main.Categories with {
 
 ### Try to add a new category
 
-Let's exercise the constraints we have now.
-
-Try to add a new category, with a decent description. There's a JSON payload
-for this in the file [pulses-and-seeds.json](assets/pulses-and-seeds.json) (in
-the `assets/` directory for this exercise) which looks like this:
+Let's exercise the constraints we have now. We'll try to add a new category,
+with a decent description. There's a JSON payload for this in the file
+[pulses-and-seeds.json](assets/pulses-and-seeds.json) (in the `assets/`
+directory for this exercise) which looks like this:
 
 ```json
 {
@@ -422,7 +421,208 @@ Content-Length: 168
 
 ## Explore another constraint to check for association existence
 
-TODO ... (supplier should exist fo new products)
+The entities in our schema are related. A product should have a category and a
+supplier. Currently, we can request the creation of a new product, where the
+associated supplier doesn't exist.
+
+Let's try that now.
+
+### Look at a payload for a product pointing to a non-existent supplier
+
+There's a JSON payload for such an OData create operation in the file
+[eastvleteren-12.json](assets/eastvleteren-12.json) (in the `assets/`
+directory for this exercise) which looks like this:
+
+```json
+{
+  "ProductID": 78,
+  "ProductName": "Eastvleteren 12",
+  "UnitPrice": 17.50,
+  "Category_CategoryID": 1,
+  "Supplier_SupplierID": 30,
+  "UnitsInStock": 20,
+  "Discontinued": false
+}
+```
+
+👉 Copy that file to the current project directory:
+
+```bash
+cp ../exercises/07/assets/eastvleteren-12.json .
+```
+
+👉 Look at the ID of the associated supplier (`30`) in the JSON payload, and
+note that this supplier does not exist:
+
+```bash
+curl \
+  --include \
+  --url localhost:4004/northwhisper/Suppliers/30
+```
+
+It doesn't:
+
+```log
+HTTP/1.1 404 Not Found
+...
+```
+
+### Try an OData create operation with this payload
+
+But we can still send this payload successfully to have a new product created.
+
+👉 Try that now:
+
+```bash
+curl \
+  --include \
+  --data @eastvleteren-12.json \
+  --url localhost:4004/northwhisper/Products
+```
+
+It works:
+
+```log
+HTTP/1.1 201 Created
+OData-Version: 4.0
+location: Products(78)
+Content-Type: application/json; charset=utf-8
+Content-Length: 199
+
+{
+  "@odata.context": "$metadata#Products/$entity",
+  "ProductID": 78,
+  "ProductName": "Eastvleteren 12",
+  "UnitPrice": 17.5,
+  "Category_CategoryID": 1,
+  "Supplier_SupplierID": 30,
+  "UnitsInStock": 20,
+  "Discontinued": false
+}
+```
+
+But is that a good thing? There's no supplier associated with the product, as
+we can see from
+<http://localhost:4004/northwhisper/Products/78?$expand=Supplier>.
+
+### Require the association target to exist
+
+We can apply a constraint so that targets in associations must exist, using
+either the `@assert.target` annotation or with an expression within the more
+flexible and free-form `@assert` annotation. Let's try both, starting with
+`@assert.target`.
+
+#### Use @assert.target
+
+Annotating a managed to-one association with `@assert.target` checks whether
+the target entity referenced by the association (the reference's target) exists
+for a given input.
+
+👉 Do that now, adding a second `annotate` directive in the `srv/constraints.cds`
+file, like this:
+
+```cds
+using Main from './main';
+
+annotate Main.Categories with {
+
+  Description  @assert: (case
+    when Description is null then 'Description must be supplied'
+    when length(Description) < 3 then 'Description too short'
+  end);
+
+  CategoryName @assert.format: '^[A-Z][a-z]+(?:\W[A-Z][a-z]+)*$'
+    @assert.format.message: 'Follow the category naming conventions';
+
+}
+
+annotate Main.Products : Supplier with @assert.target;
+```
+
+> Note the use of the colon (`:`) to introduce the leaf, i.e. the `Supplier`
+> element. A colon is used instead of a period (`.`) so that the separation
+> between the scoped name of the container (the `Main.Products` entity) and the
+> containee (the `Supplier` element) is clear.
+
+#### Retry the new product creation
+
+With this annotation in place, let's retry the operation.
+
+Do that now:
+
+```bash
+curl \
+  --include \
+  --data @eastvleteren-12.json \
+  --url localhost:4004/northwhisper/Products
+```
+
+This time, the request is denied:
+
+```log
+HTTP/1.1 400 Bad Request
+OData-Version: 4.0
+Content-Type: application/json; charset=utf-8
+Content-Length: 141
+
+{
+  "error": {
+    "message": "Target with this key doesn't exist.",
+    "code": "ASSERT_TARGET",
+    "target": "Supplier_SupplierID",
+    "@Common.numericSeverity": 4
+  }
+}
+```
+
+Solid, but a fairly generic error message. That might be fine for our
+requirements, but we can do better. While there isn't a corresponding
+`.message`-suffixed version of this annotation (as there is for
+`@assert.format`, we can turn to the more flexible `@assert`.
+
+#### Replace the @assert.target with an expression in an @assert annotation
+
+Let's replace the `@assert.target` annotation with one that uses a `case`
+expression similar to what we've employed earlier in this exercise.
+
+👉 Modify the new annotation so that it looks like this:
+
+```cds
+annotate Main.Products : Supplier with @assert: (case
+  when not exists Supplier
+  then 'Supplier does not exist'
+end);
+```
+
+This time we're using the `exists` predicate in a condition conveyed within a
+`case` expression and supplying a custom error message.
+
+#### Retry the new product creation again
+
+If we retry the operation again, we now get the same result overall (a '400' code)
+but a more appropriate message:
+
+```log
+HTTP/1.1 400 Bad Request
+OData-Version: 4.0
+Content-Type: application/json; charset=utf-8
+Content-Length: 119
+
+{
+  "error": {
+    "message": "Supplier does not exist",
+    "target": "Supplier_SupplierID",
+    "code": "400",
+    "@Common.numericSeverity": 4
+  }
+}
+```
+
+Excellent!
+
+There's much more to declarative constraints - this exercise only really
+scratched the surface. But now you have a better understanding of what they are
+and how they can be employed.
 
 ## Further info
 

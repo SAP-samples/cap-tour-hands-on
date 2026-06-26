@@ -1,0 +1,9 @@
+{
+  "ProductID": 78,
+  "ProductName": "Eastvleteren 12",
+  "UnitPrice": 17.50,
+  "Category_CategoryID": 1,
+  "Supplier_SupplierID": 30,
+  "UnitsInStock": 20,
+  "Discontinued": false
+}
