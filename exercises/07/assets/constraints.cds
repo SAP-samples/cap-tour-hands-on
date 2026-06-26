@@ -2,12 +2,12 @@ using Main from './main';
 
 annotate Main.Categories with {
 
-  CategoryName @assert.format: '^[A-Z][a-z]+(?:\W[A-Z][a-z]+)*$';
-
   Description  @assert: (case
     when Description is null then 'Description must be supplied'
     when length(Description) < 3 then 'Description too short'
   end);
+
+  CategoryName @assert.format: '^[A-Z][a-z]+(?:\W[A-Z][a-z]+)*$';
 
 }
 
