@@ -84,6 +84,17 @@ see the [prerequisites] for more info.
     We'll do that first by exploring in the cds REPL and then formalising our
     explorations in a file that we can drive with a test runner.
 
+- [07 - Defining constraints declaratively](exercises/07/README.md)
+
+    CDS modelling doesn't stop at entities, relationships and service exposure.
+    Domain design also includes constraints, and these can be included in the
+    overall model declaratively, meaning a cleaner and smaller surface area (less
+    chance of bugs), a shared understanding of intent between the domain expert and
+    developer and less code to write and maintain.
+
+    In this exercise, we'll explore declarative constraints by adding some to our
+    Northwind-based base project.
+
 ## Support
 
 Support for the content in this repository is available during the actual time
