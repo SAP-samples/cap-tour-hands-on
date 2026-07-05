@@ -540,7 +540,7 @@ staring at this to understand what is being done:
   - the entities are examined one by one (`Products`, `Suppliers`, `Categories`)
   - if any of the elements of the entity currently being examined have been
     annotated with `@flagify`, then:
-  - then a handler for the `after` phase of reading the given entity is added
+  - a handler for the `after` phase of reading the given entity is added
   - that handler checks the annotated elements and works through the records,
     substituting a flag emoji where appropriate and if possible
 
