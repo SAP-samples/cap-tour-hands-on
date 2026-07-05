@@ -330,7 +330,7 @@ entity {
 ```
 
 However, due to how some of the detail is structured and stored, as
-`LinkedDefintions` (see [Further info](#further-info)), we can sometimes
+`LinkedDefinitions` (see [Further info](#further-info)), we can sometimes
 struggle to enumerate members in a way we would normally expect. For example:
 
 ```javascript
@@ -434,8 +434,8 @@ All of the empty properties mentioned earlier now have values.
 
 👉 Take a moment to explore these, with, for example:
 
-- `cds.model` (effectively the compiled model, in an internal CSN)
-  representation
+- `cds.model` (effectively the compiled model, in an internal CSN
+  representation)
 - `cds.db === db` (yes, the database property points to the `db` service)
 - `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
   their kinds)
@@ -443,7 +443,8 @@ All of the empty properties mentioned earlier now have values.
 ### Try out query construction and .ql
 
 While this section fits in naturally with the flow (we've tried out the other
-cds REPL specific commands so far), we need to take a step back a little first.
+cds REPL specific commands `.run` and `.inspect` so far), we need to take a
+step back a little first.
 
 The `.ql` command switches us into a different cds REPL mode where we can
 enter query constructs directly. But before we do that, it's worth taking
@@ -487,7 +488,7 @@ We can call HTTP style methods on this object, passing objects that represent
 the entities, objects that have also been made available in the cds REPL
 context.
 
-👉 Try that now:
+👉 Try that now, with a `get` method:
 
 ```javascript
 db.get(Products).where({ProductName:'Chai'})
@@ -581,7 +582,8 @@ Let's spend a brief moment on the CRUD-style API (see also [Further
 info](#further-info)), which is an alternative set of convenience methods to
 contruct queries.
 
-👉 Let's have a look at a luxury product:
+👉 Let's have a look at a luxury product, using `read` (the "R" in "CRUD")
+instead of the more HTTP-like `get`):
 
 ```javascript
 await db.read(Products).where({ProductName:{'like':'%Kaviar%'}})
@@ -828,7 +830,9 @@ cheap](https://github.com/qmacro/capref/blob/main/axioms/AXI004.md)!
 ### Create a new basic service
 
 We saw earlier that `Main` has the type `ApplicationService`, effectively an
-instance of the `cds.ApplicationService` class. Capire's "Core Services" topic
+instance of the `cds.ApplicationService` class.
+
+Capire's "Core Services" topic
 (see [Further info](#further-info)) tells us that `cds.ApplicationService` is
 built upon the base class `cds.Service` which has everything we need for the
 behaviour of reacting to messages through execution of registered event handlers.
@@ -836,7 +840,7 @@ behaviour of reacting to messages through execution of registered event handlers
 👉 So let's create a new instance of `cds.Service`, as that's all we should need:
 
 ```javascript
-srv = new cds.Service`
+srv = new cds.Service
 ```
 
 This should emit something like this:
@@ -919,7 +923,7 @@ What we see here are two arguments that the handler received:
 - a `next` function to enable the calling of any further handlers in the
   interceptor stack
 
-> For more on further handlers, the interceptor stack, and -- crucially -- the
+> For more on further handlers, the interceptor stack, and - crucially - the
 > difference between synchronous request/response style messages and
 > asynchronous events (reflected in the difference between `srv.send` and
 > `srv.emit`), see the [Creating a service from
@@ -970,5 +974,5 @@ done!
 1. The beauty of JavaScript is in evidence here - handlers are provided as
    functions (as `srv.on` is a [higher order
    function](https://en.wikipedia.org/wiki/Higher-order_function) which takes a
-   handler function as one of its arguments, and `console.log` is a function so
-   perfectly valid to provide here.
+   handler function as one of its arguments, and `console.log` is a function, and
+   thus perfectly valid to provide here.
