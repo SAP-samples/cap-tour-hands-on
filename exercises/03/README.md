@@ -18,7 +18,7 @@ a bit of time.
 ```bash
 rm -rf proj-03 \
   && cp -a baseproj proj-03 \
-  && cd $_
+  && cd $_ \
   && tree
 ```
 
@@ -74,8 +74,8 @@ We can see there are two plugins being fetched and loaded:
 - `@sap/cds-fiori`
 - `@cap-js/sqlite`
 
-So let's investigate where these plugins (mentioned at the start of the CAP
-server log output) are coming from and why they're being loaded.
+So let's investigate where these plugins are coming from and why they're
+being loaded.
 
 ### Look at the dependent packages
 
@@ -103,7 +103,7 @@ cds repl
 You should see something like this:
 
 ```log
-node ➜ /workspaces/cap-tour-hands-on (main) $ cds repl
+node ➜ /workspaces/cap-tour-hands-on/proj-03/ (main) $ cds repl
 Welcome to cds repl v9.9.1
 > cds.home
 /workspaces/cap-tour-hands-on/proj-03/node_modules/@sap/cds
@@ -158,22 +158,23 @@ key file that makes your package a plugin, like the "index" file in other
 contexts, is `cds-plugin.js`. So let's see whether we can find any instance of
 such a file.
 
-👉 Look for `cds-plugin.js` files in `cds.home` and `cds.root`:
+👉 Look for `cds-plugin.js` files starting from the project root (`.`) which
+will then also include the project's `node_modules/` directory:
 
 ```bash
 find . -name cds-plugin.js 
 ```
 
-and bingo - we have two, both in `cds.home` (in the `@sap/cds` runtime):
+and bingo - we have two:
 
 ```log
 ./node_modules/@sap/cds-fiori/cds-plugin.js
 ./node_modules/@cap-js/sqlite/cds-plugin.js
 ```
 
-And yes, these are `cds-plugin.js` files in packages that exactly match those
-we saw in the CAP server log output. And, also yes, the SQLite module is
-implemented ... as a plugin.
+And yes, these are `cds-plugin.js` files in packages (`@sap/cds-fiori` and
+`@cap-js/sqlite`) that exactly match those we saw in the CAP server log output.
+And, also yes, the SQLite module is implemented ... as a plugin.
 
 ## Build the skeleton of our own plugin
 
@@ -181,13 +182,14 @@ Now we know what we need - a package with a `cds-plugin.js` file - let's create
 one. Even here we can embrace the local-first development mode that CAP
 celebrates by using NPM's "workspaces" concept (see [Further
 info](#further-info)), which will allow us to create the plugin locally but
-still "require" it via the normal `package.json#dependencies` route.
+still "require" it via the normal `package.json#dependencies` route (we touch
+on this in [02 - Mocking messaging](../02/README.md)).
 
 > [!NOTE]
 > What will the plugin do? Well, let's keep it super simple so we can focus on
-> the plugin mechanics. It should replace values with the corresponding flag
-> emojis, for elements that have been marked with a `@flagify` annotation. An
-> essential enterprise feature, I'm sure you'll agree!
+> the plugin mechanics. It should replace country values with the corresponding
+> flag emojis, for elements that have been marked with a `@flagify` annotation.
+> An essential enterprise feature, I'm sure you'll agree!
 
 ### Create the plugin package directory
 
@@ -255,8 +257,8 @@ where.
 tree -F -I node_modules
 ```
 
-This should show something like this, where we can see that our new package is
-in its own `flags/` directory:
+This should show something like this, where we can see that our new plugin
+package is in its own `flags/` directory:
 
 ```log
 ./
@@ -293,7 +295,7 @@ That should be all we need, right?
 
 ### Start up the main project
 
-👉 Now start up the main service in `proj-03` like we did before:
+👉 Now start up the main service in `proj-03/` like we did before:
 
 ```bash
 DEBUG=plugins cds watch
@@ -312,13 +314,13 @@ We see this:
 [cds.plugins] - loaded plugins in: 3.791ms
 ```
 
-It's essentially the same output as before.
+Hmm. It's essentially the same output as before.
 
 Where's our plugin?
 
 Well, we should know now that it's only loaded when defined as a dependency.
 
-👉 So let's do that now (in a separate terminal):
+👉 So let's do that now (in a separate terminal, in `proj-03/` of course):
 
 ```bash
 npm add flags
@@ -331,7 +333,9 @@ Assuming your CAP server is still running, the restart should now emit this:
 [cds.plugins] - loading @sap/cds-fiori: {
   impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
 }
-[cds.plugins] - loading flags: { impl: 'flags/cds-plugin.js' }
+[cds.plugins] - loading flags: {
+  impl: 'flags/cds-plugin.js'
+}
 [flags] - Starting up ...
 [cds.plugins] - loading @cap-js/sqlite: {
   impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
@@ -487,12 +491,12 @@ functions, all predicate functions (and one of which is partially applied, see
 
 ```javascript
 const isAppService = x => x.kind == 'app-service'
-const isAnnotated = a => x => x[a]
-const isFlagified = isAnnotated('@flagify')
+const isAnnotatedWith = a => x => x[a]
+const isFlagified = isAnnotatedWith('@flagify')
 ```
 
 Because of how beautifully annotations are stored, we are able to define a
-simple higher order function `isAnnotated` that can be used to construct more
+simple higher order function `isAnnotatedWith` that can be used to construct more
 specific functions (such as `isFlagified`) by partially applying it.
 
 ### Define the main plugin behaviour
