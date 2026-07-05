@@ -21,7 +21,7 @@ details and options.
 
 To get started, clone this repository and open it in your favourite editor or
 IDE. Alternatively, launch a GitHub Codespace directly from this repository -
-see the [prerequisites] for more info.
+see the [prerequisites](prerequisites/README.md) for more info.
 
 - [01 - Mocking auth](exercises/01/README.md)
 

@@ -14,8 +14,8 @@ in this exercise.
 
 NPM's [workspaces](https://docs.npmjs.com/cli/v11/using-npm/workspaces/)
 concept is very useful for organising interdependent packages, especially for a
-local-first development scenario. Let's set up what we need to use the
-workspaces concept first.
+local-first development scenario. Let's start by setting up what we need
+to use the workspaces concept.
 
 👉 In a new shell session, or at least in the root of this repo, create a new
 project directory:
@@ -45,8 +45,8 @@ one another[<sup>1</sup>](#footnotes).
 
 ## Create an emitter service
 
-In simple terms, messaging generally have two components participating, one
-that emits, and one that receives. Let's first create the emitter.
+In simple terms, messaging generally have two participating components -
+one that emits, and one that receives. Let's first create the emitter.
 
 👉 Create a new `emitter` service in its own project subdirectory within the
 `proj-02/` directory, specifying two facets `nodejs` and
@@ -58,7 +58,7 @@ cds init emitter --add nodejs,file-based-messaging
 
 Here's what those two facets do:
 
-- `nodejs`: specify that a CAP Node.js project is desired, which will (amongst
+- `nodejs`: specifies that a CAP Node.js project is desired, which will (amongst
   other things) ensure the creation of a `package.json` file in the `emitter/`
   project subdirectory, with the appropriate
   settings[<sup>2</sup>](#footnotes).
@@ -228,6 +228,7 @@ So far so good.
 
 ```bash
 curl \
+  --header 'Content-Type: application/json' \
   --data '{"greeting": "Mock all the things!"}' \
   --url 'localhost:4006/rest/emitter/greet'
 ```
@@ -239,7 +240,7 @@ In the log output of the emitter server, we see:
 [emitter] - emitting Greeting.Received (Mock all the things!)
 ```
 
-OK, fine, but we can go deeper.
+OK, fine, but let's go deeper.
 
 #### Examine the message queue
 
@@ -269,14 +270,14 @@ codejam.emitter.EmitterService.Greeting.Received
 }
 ```
 
-OK, now to turn our attention to the recipient of this event.
+OK, now let's turn our attention to the recipient of this event.
 
 ## Create a receiver service
 
 We can start off with the same approach, creating a basic receiver service in
 its own project subdirectory.
 
-👉 Do that now:
+👉 Do that now, from the `proj-02/` directory:
 
 ```bash
 cds init receiver --add nodejs,file-based-messaging
@@ -291,7 +292,7 @@ As before, we only really need the `package.json` file.
 👉 Remove what we don't need:
 
 ```bash
-rm -rf emitter/{.gitignore,.vscode/,app/,db/, srv/,readme.md}
+rm -rf receiver/{.gitignore,.vscode/,app/,db/,srv/,readme.md}
 ```
 
 ### Add a custom server implementation
@@ -319,7 +320,7 @@ cds.once('served', async () => {
 We can view this as the flip side of `emitter/srv/main.js`, as it:
 
 - loads the CDS facade
-- creates an 'receiver' logging instance
+- creates a 'receiver' logging instance
 
 and then, in the one-time
 [served](https://cap.cloud.sap/docs/node.js/cds-server#served) event:
@@ -368,12 +369,7 @@ examine the entire contents of our `proj-02/` directory, for example with
 │       └── main.js
 ├── package.json
 └── receiver
-    ├── app
-    ├── db
-    ├── package.json
-    ├── readme.md
-    ├── server.js
-    └── srv
+    └── server.js
 
 7 directories, 8 files
 ```
@@ -422,13 +418,11 @@ Here's what you should see (with much of the output removed, for brevity):
 └── receiver
     ├── package.json
     └── server.js
-
-115 directories, 7 files
 ```
 
-The `emitter` package in `emitter/` is local, but NPM has created a symbolic
-link to it so that it's available as if it had been retrieved and installed as
-normal.
+The `emitter` and `receiver` packages are local, but NPM has created symbolic
+links to them so that they're available as if they had been retrieved and
+installed as normal.
 
 ### Start the receiver
 

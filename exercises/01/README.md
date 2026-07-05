@@ -40,7 +40,7 @@ This should emit something like this:
 As it's our first time using the base project, take a minute to explore the
 service which is a very cut down version of Northwind.
 
-👉 Start the CAP server (let's use `cds serve` for a change, to remind ourselves
+👉 Start the CAP server, using `cds serve` for a change, to remind ourselves
 of the difference between `serve` and `watch`, and think about the options and what
 they do (such as `--in-memory`):
 
@@ -62,9 +62,14 @@ for each of the three entities):
 > the above URLs to the shell, where they'll become clickable and auto
 > translated into the appropriate domain name equivalent:
 >
+> 👉 Open up a new terminal window, which should place you in the root of this
+> CodeJam content, and run:
+>
 > ```bash
-> ../utils/showurls
+> ./utils/showurls
 > ```
+>
+> specifying the exercise number (1) as the only argument.
 
 👉 Once you've done exploring, stop the CAP server (with `Ctrl-C`).
 
@@ -138,8 +143,8 @@ cds.requires.auth.users.alan.roles=["admin"]
 
 > Alan Kay led the Xerox PARC research team that produced
 > [Smalltalk](https://en.wikipedia.org/wiki/Smalltalk), a language, system and
-> environment that has had a large influence on software design and
-> architecture, including CAP[<sup>2</sup>](#footnotes).
+> environment that has had a large influence on important software designs and
+> architectures, including CAP[<sup>2</sup>](#footnotes).
 
 👉 Check the effect of this configuration:
 
@@ -187,7 +192,7 @@ HTTP/1.1 200 OK
     {
       "CategoryID": 1,
       "CategoryName": "Beverages",
-      "...": "..."
+      "Description": "Soft drinks, coffees, teas, beers, and ales"
     }
   ]
 }
@@ -240,10 +245,10 @@ HTTP/1.1 401 Unauthorized
 Unauthorized
 ```
 
-> Also note (that despite the status text):
+> Also note that (despite the status text):
 >
-> - An HTTP 401 response is related to authentication
-> - An HTTP 403 response (which we'll see shortly) is related to authorization
+> - an HTTP 401 response is related to authentication
+> - an HTTP 403 response (which we'll see shortly) is related to authorization
 
 Note also that we see this in the CAP server log, too:
 
@@ -415,6 +420,7 @@ Now let's check write access, given that privilege on `Products`.
 ```bash
  curl -u alan: \
    --request PATCH \
+   --header 'Content-Type: application/json' \
    --data '{"UnitPrice":100}' \
    --include \
    --url 'localhost:4004/northwhisper/Products/1'
@@ -452,6 +458,7 @@ cds.requires.auth.users.alan.roles=["admin","finance"]
 ```bash
  curl -u alan: \
    --request PATCH \
+   --header 'Content-Type: application/json' \
    --data '{"UnitPrice":100}' \
    --include \
    --url 'localhost:4004/northwhisper/Products/1'
@@ -480,6 +487,11 @@ HTTP/1.1 200 OK
 - The [CAP-level
   Authorization](https://cap.cloud.sap/docs/guides/security/authorization)
   topic in Capire is definitely worth a visit.
+- The blog post [CAP service authentication at design time and in
+  production](https://qmacro.org/blog/posts/2026/06/19/cap-service-authentication-at-design-time-and-in-production/)
+  explains how the "failsafe" production auth mechanism is designed for
+  resources served in a CAP context, and includes mention of the
+  `restrict_all_services` property.
 
 ---
 
@@ -498,13 +510,13 @@ HTTP/1.1 200 OK
    section of the notes to Part 5 of The Art and Science of CAP.
 
 1. See the `restrict_all_services` flag within `requires.auth` for further
-   details.
+   details and the blog post [CAP service authentication at design time and in production](https://qmacro.org/blog/posts/2026/06/19/cap-service-authentication-at-design-time-and-in-production/)
 
 1. Any JSON structures in responses are formatted for easier reading.
 
 1. If we don't use the `:` then `curl` will prompt for a password, like this:
 
-    ```shell
+    ```text
     ; curl -u alan -i 'localhost:4004/northwhisper/Products?$top=1'
     Enter host password for user 'alan':
     ```
