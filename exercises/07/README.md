@@ -97,6 +97,7 @@ that matter.
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data '{"CategoryID":9,"CategoryName":"my new category"}' \
   --url localhost:4004/northwhisper/Categories
 ```
@@ -131,13 +132,14 @@ somewhere to put our constraints.
 We can address not only the category name format, but also the lack of
 description, declaratively, with annotations.
 
-Following best practices (see [Further info](#further-info)) ...:
+There's a "Separation of Concerns" best practice (see [Further
+info](#further-info)) which states:
 
-_**Separation of Concerns** – always put secondary concerns, such as
-constraints in this case, into separate files as in the example, instead of
-polluting your core service definitions._
+_"Always put secondary concerns, such as constraints in this case, into
+separate files as in the example, instead of polluting your core service
+definitions."_
 
-... we should do this in a separate file.
+We should heed this, and use a separate file.
 
 👉 In a separate terminal window (so that the CAP server can continue running),
 create a file `annotations.cds` in the `srv/` directory, alongside `main.cds`,
@@ -177,6 +179,7 @@ What effect does this have?
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data '{"CategoryID":9,"CategoryName":"my new category"}' \
   --url localhost:4004/northwhisper/Categories
 ```
@@ -204,6 +207,7 @@ This rejection also occurs if we merely supply an empty string:
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data '{"CategoryID":9,"Description":"","CategoryName":"my new category"}' \
   --url localhost:4004/northwhisper/Categories
 ```
@@ -302,6 +306,7 @@ cp ../exercises/07/assets/pulses-and-seeds.json .
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data @pulses-and-seeds.json \
   --url localhost:4004/northwhisper/Categories
 ```
@@ -398,6 +403,7 @@ category again, but this time using a name that conforms to the convention set.
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data @pulses-and-seeds.json \
   --url localhost:4004/northwhisper/Categories
 ```
@@ -476,6 +482,7 @@ But we can still send this payload successfully to have a new product created.
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data @eastvleteren-12.json \
   --url localhost:4004/northwhisper/Products
 ```
@@ -539,20 +546,16 @@ annotate Main.Categories with {
 annotate Main.Products : Supplier with @assert.target;
 ```
 
-> Note the use of the colon (`:`) to introduce the leaf, i.e. the `Supplier`
-> element. A colon is used instead of a period (`.`) so that the separation
-> between the scoped name of the container (the `Main.Products` entity) and the
-> containee (the `Supplier` element) is clear.
-
 #### Retry the new product creation
 
 With this annotation in place, let's retry the operation.
 
-Do that now:
+👉 Do that now:
 
 ```bash
 curl \
   --include \
+  --header 'Content-Type: application/json' \
   --data @eastvleteren-12.json \
   --url localhost:4004/northwhisper/Products
 ```
@@ -575,10 +578,11 @@ Content-Length: 141
 }
 ```
 
-Solid, but a fairly generic error message. That might be fine for our
-requirements, but we can do better. While there isn't a corresponding
-`.message`-suffixed version of this annotation (as there is for
-`@assert.format`, we can turn to the more flexible `@assert`.
+Solid, but a fairly generic error message.
+
+That might be fine for our requirements, but we can do better. While there
+isn't a corresponding `.message`-suffixed version of this annotation (as there
+is for `@assert.format`), we can turn to the more flexible `@assert`.
 
 #### Replace the @assert.target with an expression in an @assert annotation
 
@@ -599,8 +603,10 @@ This time we're using the `exists` predicate in a condition conveyed within a
 
 #### Retry the new product creation again
 
-If we retry the operation again, we now get the same result overall (a '400' code)
-but a more appropriate message:
+👉 Retry the operation again.
+
+We now get the same result overall (a '400' code) but a more appropriate
+message:
 
 ```log
 HTTP/1.1 400 Bad Request
@@ -638,6 +644,13 @@ and how they can be employed.
 - See the [Operators (xpr)](https://cap.cloud.sap/docs/cds/cxl#operators-xpr)
   section of the CXL topic in Capire for a list of all operators, including
   `case-when-then`.
+
+---
+
+## Questions
+
+1. When annotating the `Supplier` element of the `Products` entity, we used a
+   colon (`:`) as a separator. Why not a period (`.`)?
 
 ---
 
