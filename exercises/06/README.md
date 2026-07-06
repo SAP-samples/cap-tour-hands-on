@@ -2,7 +2,7 @@
 
 In the previous exercise we checked the behaviour of our service
 definition by starting the CAP server and then manually sending HTTP requests
-to it. This is a great way to interact, but no the only one.
+to it. This is a great way to interact, but not the only one.
 
 In this exercise we'll add tests which will put our service through its paces.
 We'll do that first by exploring in the cds REPL and then formalising our
@@ -85,9 +85,9 @@ Welcome to cds repl v9.9.1
 
 Instead, we'll request one in the context of the test support package.
 
-[!NOTE]
-All commands you'll be entering in the rest of this subsection will be
-in the context of the cds REPL, at the `>` prompt.
+> [!NOTE]
+> All commands you'll be entering in the rest of this subsection will be
+> in the context of the cds REPL, at the `>` prompt.
 
 ### Meet the Test class
 
@@ -141,8 +141,9 @@ So far so good.
 
 ### Use the cds.test convenience method
 
-That was a little cumbersome, but there's a convenience method that we can use
-instead of that ceremony, in the form of `cds.test()`.
+Summoning and invoking that test mechanism was a little cumbersome, but there's
+a convenience method that we can use instead of that ceremony, in the form of
+`cds.test()`.
 
 👉 Restart the cds REPL:
 
@@ -285,13 +286,18 @@ Nice - it's the response status and payload (as we'd sort of expect):
 ]
 ```
 
+At this point, we're done with the cds REPL.
+
+👉 Exit the cds REPL with `Ctrl-D`.
+
 ## Build a series of tests
 
 Now that we've got a feel for the support for testing, let's create our first
 test. Traditionally these files are like normal language-based files except
 they have a `.test` inserted just before the extension.
 
-Also traditionally, the test support package will look in a `test/` directory.
+Also traditionally, the test support package will look for such files in a
+`test/` directory.
 
 ### Create a test file
 
@@ -317,7 +323,7 @@ earlier:
   test building block from the Chai Assertion Library (see [Further
   info](#further-info))
 - the argument to `cds.test()` is `.`, i.e. "this current (project) directory",
-  so as to be more explicit
+  just to be more explicit
 - as is traditional, we're using `describe` to create a (named) "group" for
   tests that logically belong together
 
@@ -412,12 +418,13 @@ Now that we have everything in place, let's add a first test.
 
 Here are some notes on this test definition:
 
-- `it` defines a test name and a function that holds the expectation(s) that
-  should be tested
-- the expectation to be tested relates to what's returned from fetching the
+- `it` defines a name conveying a brief test description ("initially returns an
+  empty list") and a function that holds the expectation(s) that should be
+  checked
+- the expectation to be checked relates to what's returned from fetching the
   `/odata/v4/morse/Controls` resource; the `GET` mechanism makes this response
   payload available in the `data` object which we grab via destructuring
-- the expectation here is what we are going to get is an empty list (`[]`)
+- the expectation here is that we are going to get an empty list (`[]`)
 - we refer to `data.value` in the expectation as - in the resource that's
   returned[<sup>2</sup>](#footnotes) - it's the `value` property that has the
   actual data
@@ -456,7 +463,7 @@ We get output like this:
  4.631s
 ```
 
-We can see that the test server was started again. We can see evidence of the
+We can see that a CAP server was started again. We can see evidence of the
 GET request for the `Controls` entityset (`[odata] - GET
 /odata/v4/morse/Controls`).
 
@@ -573,11 +580,11 @@ describe('Transitions', () => {
 >
 > The testing mechanisms in use will abort and cause the test to fail if the HTTP
 > response code is unexpected. What's expected is any code that fits in to the
-> default condition which is `status >= 200 && status < 300`. We actually _want_
-> a 409 response code ("Conflict") so pass a custom definition of
+> default condition which is `status >= 200 && status < 300`. But we actually want
+> a 409 response code ("Conflict"), so need to pass a custom function for
 > `validateStatus` as a third argument to `POST()` (the second argument is to
 > convey any payload for the call, but there is no payload for this action
-> invocation).
+> invocation, hence `null`).
 
 ### Invoke the test runner one last time
 
@@ -623,6 +630,17 @@ If you do, well done!
   your views on JavaScript (and Ruby[<sup>3</sup>](#footnotes)) :-)
 - The [deep-eql](https://github.com/chaijs/deep-eql) library is used by Chai
   for non-trivial and / or reference-laden comparisons
+
+---
+
+## Questions
+
+1. In our [first test request](#try-a-first-test-request) we specified the
+   relative path in backticks (`` `...` ``) rather than single or double
+   quotes. Why?
+
+1. The CDS command line interface `cds` actually has a facet that helps us with
+   setting up tests like this. What is it, and what does it do?
 
 ---
 
