@@ -13,7 +13,8 @@ simple implementation.
 👉 Create a new project directory `proj-05/`:
 
 ```bash
-rm -rf proj-05 \
+rm -rf proj-05/ \
+  && mkdir proj-05/ \
   && cd $_
 ```
 
@@ -22,8 +23,8 @@ understand.
 
 The idea is to model a classic lever engine control as typically found on
 narrowboats. These are known as "Morse" controls and enable gear selection
-(foward or reverse) and propeller rotation speed with a single control (see
-[Further info](#further-info) for more).
+(foward or reverse) and drive-shaft based propeller rotation speed with a
+single control (see [Further info](#further-info) for more).
 
 As with other engines, there's also the neutral position that sits between
 forward and reverse gears, and a brief moment in neutral before engaging the
@@ -71,7 +72,7 @@ service Morse {
 
 Here's what we have:
 
-- a `Status` type which, via the `enum` definition, has three possible values
+- a `Position` type which, via the `enum` definition, has three possible values
   `Forward`, `Neutral` and `Reverse`
 - a `Controls` entity definition, where each entity has an ID and a lever
   "position", which by default (e.g. when a control is created) is at
@@ -97,6 +98,7 @@ to carry out the following experiments.
 ```bash
 curl \
   --silent  \
+  --header 'Content-Type: application/json' \
   --data '{"ID":1}'  \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
@@ -113,11 +115,13 @@ This should return something like this (note the default position of `Neutral`):
 
 ### Create another new control with a non-neutral initial position
 
-👉 Create another new control, this time setting the initial gear selection:
+👉 Create another new control, this time explicitly setting the initial gear
+selection:
 
 ```bash
 curl \
   --silent  \
+  --header 'Content-Type: application/json' \
   --data '{"ID":2,"position":"Forward"}'  \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
@@ -174,6 +178,7 @@ Or are we?
 ```bash
 curl \
   --request PATCH \
+  --header 'Content-Type: application/json' \
   --data '{"position":"Reverse"}' \
   --silent \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
@@ -197,6 +202,7 @@ from `Reverse` into `Forward` without going through `Neutral`.
 ```bash
 curl \
   --request PATCH \
+  --header 'Content-Type: application/json' \
   --data '{"position":"Forward"}' \
   --silent \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
@@ -255,10 +261,10 @@ annotate Morse.Controls actions {
   status (the `position` element in this case)
 - each of the bound actions are also annotated with `@from` and `@to` pairs,
   showing the allowed status transitions that are effected by each action
-- There can be one or more allowed status for these `@from` and `@to`
-  annotations
+- There can be one or more allowed status values for the `@from` annotation
+  and a single value for the `@to` annotation
 
-The observations on the `@from` and `@to` parts is worth expanding upon. It
+The detail on the `@from` and `@to` parts is worth expanding upon. It
 means that, explicitly:
 
 - `engageForward` will move a control's position to `Forward`, but only from a
@@ -286,6 +292,7 @@ It's time to try our our declarative solution.
 ```bash
 curl \
   --silent  \
+  --header 'Content-Type: application/json' \
   --data '{"ID":1}'  \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
@@ -310,6 +317,7 @@ about creating a control with a different initial position?
 ```bash
 curl \
   --silent  \
+  --header 'Content-Type: application/json' \
   --data '{"ID":2,"position":"Forward"}'  \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
@@ -324,13 +332,13 @@ Ooh! We get a control back, but with an initial position of `Neutral`:
 }
 ```
 
-That's because the element pointed to by the `@flow.status` annotation has also
-been automatically given a `@readonly` annotation too.
+That's because the element `position`, pointed to by the `@flow.status` annotation,
+has been automatically given a `@readonly` annotation too.
 
 👉 Check that by looking at the CSN for the model:
 
 ```bash
-cds c . \
+cds compile . \
   | jq '.definitions["Morse.Controls"].elements'
 ```
 
@@ -364,6 +372,7 @@ control positions directly.
 ```bash
 curl \
   --request PATCH \
+  --header 'Content-Type: application/json' \
   --data '{"position":"Reverse"}' \
   --silent \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
@@ -410,8 +419,8 @@ OData-Version: 4.0
 }
 ```
 
-Of course, this is an action, implying side effects, which means HTTP POST is
-required.
+Of course, this is an action, implying possible side effects, which means that
+HTTP POST is required.
 
 👉 Let's try that again:
 
