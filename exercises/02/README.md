@@ -21,8 +21,8 @@ to use the workspaces concept.
 project directory:
 
 ```bash
-rm -rf proj-02/ \
-  && mkdir proj-02/ \
+rm -rf proj-02 \
+  && mkdir proj-02 \
   && cd $_
 ```
 

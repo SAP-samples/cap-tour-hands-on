@@ -13,8 +13,8 @@ simple implementation.
 👉 Create a new project directory `proj-05/`:
 
 ```bash
-rm -rf proj-05/ \
-  && mkdir proj-05/ \
+rm -rf proj-05 \
+  && mkdir proj-05 \
   && cd $_
 ```
 
