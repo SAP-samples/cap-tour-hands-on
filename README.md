@@ -95,6 +95,15 @@ see the [prerequisites](prerequisites/README.md) for more info.
     In this exercise, we'll explore declarative constraints by adding some to our
     Northwind-based base project.
 
+- [08 - Discovering API client package export and reuse](exercises/08/README.md)
+
+    CAP-level service integration (Calesi) is a powerful and flexible concept and
+    exists in various forms. One of these is the idea of API client packages which
+    can be created from CDS service definitions, exported, and then used in
+    consumer projects.
+
+    In this exercise we'll explore what that is, and how it works.
+
 ## Support
 
 Support for the content in this repository is available during the actual time
