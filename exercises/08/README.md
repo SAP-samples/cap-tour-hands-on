@@ -210,7 +210,12 @@ information are in "flat" records:
 We now have all we need to create the API client package, which is essentially
 an exposed and reusable version of what we've just created.
 
-👉 Do that now, using the `--data` option to request not only the API
+👉 First, move into the provider project directory:
+
+```bash
+cd northwhisper/
+```
+👉 Create the package, using the `--data` option to request not only the API
 definition but also sample data:
 
 ```bash
@@ -272,6 +277,10 @@ the projection.
 > authenticate with and use such a registry, and instead use the NPM workspaces
 > setup we have to [(stay cool and) stay
 > local](https://github.com/SAP-samples/cap-local-development-workshop/tree/main#description).
+
+👉 Before continuing, make sure any CAP server for the provider project is
+stopped (mostly because we don't need it running, and we don't want to have any
+port clashes when we eventually start up a server for the consumer project).
 
 ## Set up the consumer project
 
@@ -391,29 +400,6 @@ like this:
 }
 ```
 
-### Wire up the package references
-
-If we had been using a real NPM registry, then the `npm add` command would have
-retrieved the package, and installed it (along with the rest of the
-dependencies) i a `consumer/`-local `node_modules/` directory, and we'd be all
-set.
-
-But because we're going with the NPM workspaces powered local-first approach,
-there's one more step here, and that's to wire up the package references.
-
-👉 First, move back up from the `consumer/` project directory into the
-`proj-08/` containing directory:
-
-```bash
-cd ..
-```
-
-Now run an `npm install`:
-
-```bash
-npm install
-```
-
 ### Add in a requirement for the package
 
 All that's left for us to do is to define a requirement for this API client
@@ -459,10 +445,10 @@ Do that now, so the `consumer/package.json` contents look like this:
 At this point, we can start a CAP server for the consumer project, and see what
 happens.
 
-👉 Run `cds watch` for the consumer project:
+👉 Run `cds watch` in the consumer project directory:
 
 ```bash
-cds watch consumer
+cds watch
 ```
 
 At this point we should see something like this:
