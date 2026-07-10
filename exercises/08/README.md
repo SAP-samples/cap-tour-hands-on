@@ -34,8 +34,6 @@ content:
 }
 ```
 
-TODO - question about the "*/apis/*" entry here
-
 This will allow us to export the API client package from one project, and
 consume it in another, without a round-trip to any NPM registry (and all the
 authentication, authorisations and setup that would involve).
@@ -141,10 +139,10 @@ service ProductSummary {
 
   entity ProductData as
     projection on northwhisper.Products {
-      ProductID             as ID,
-      ProductName           as name,
-      Category.CategoryName as category,
-      Supplier.CompanyName  as supplier
+      ProductID                      as ID,
+      ProductName                    as name,
+      toupper(Category.CategoryName) as category : String,
+      Supplier.CompanyName           as supplier
     }
 
 }
@@ -159,6 +157,9 @@ service ProductSummary {
 - The associations from `Products` to `Categories` and `Suppliers` have been
   denormalised ("flattened") by means of path expressions
 - Each element has a simpler alias name
+- Just for fun and some exposure to function expressions (see [Further
+  info](#furtherinfo)) the category is to be expressed in all-caps, via the
+  portable function `toupper`[<sup>2</sup>](#footnotes)
 
 ### Check the new product summary service
 
@@ -185,19 +186,19 @@ information are in "flat" records:
     {
       "ID": 1,
       "name": "Chai",
-      "category": "Beverages",
+      "category": "BEVERAGES",
       "supplier": "Exotic Liquids"
     },
     {
       "ID": 2,
       "name": "Chang",
-      "category": "Beverages",
+      "category": "BEVERAGES",
       "supplier": "Exotic Liquids"
     },
     {
       "ID": 3,
       "name": "Aniseed Syrup",
-      "category": "Condiments",
+      "category": "CONDIMENTS",
       "supplier": "Exotic Liquids"
     }
   ]
@@ -233,8 +234,8 @@ Exporting APIs to apis/productsummary ...
 - there's an `index.cds` file thats serves a similar "bootstrapping" purpose to
   what we saw in the exercise where we were mocking messaging
 - given that this is a package that we should be able to add with NPM, there's
-  a basic `package.json` file generated with some basic information, including
-  the package name, which is made up from the "provider" package name (which we
+  a simple `package.json` file generated with some basic information, including
+  the package name which is made up from the "provider" package name (which we
   changed earlier from `baseproj` to `northwhisper`) and the name of the
   service upon which this API client package export was based
 - there's a `services.csn` file, which is the machine readable (CSN) version of
@@ -259,6 +260,10 @@ ID,name,category,supplier
 3,Aniseed Syrup,CONDIMENTS,Exotic Liquids
 4,Chef Anton's Cajun Seasoning,CONDIMENTS,New Orleans Cajun Delights
 ```
+
+In other words, it's not just lifted from the `data/` directory of CSV files in
+the provider project, it really is a pure and narrow reflection as defined by
+the projection.
 
 > [!NOTE]
 > At this point the API client package is all ready to go, and we might
@@ -297,17 +302,16 @@ cds init --add nodejs,tiny-sample consumer
 ```
 
 The `tiny-sample` facet adds a super simple CDS model which is just a catalog
-service containing a single entity `Books` which has a handful of records.
+service containing a single entity `Books` with a handful of records.
 
 > It doesn't matter too much here about how realistic it might be to use a
 > "products" package in this context; the important thing is to keep things
-> simple so we can focus on what matters.
+> simple so we can focus on the mechanics.
 
 ### Add the API client package as a dependency
 
 Now within the consumer project directory (`consumer/`) we are ready to
-"consume" the API client package. There's really only one main step, and that's
-to add it as a dependency.
+"consume" the API client package. The first step is to add it as a dependency.
 
 Whether we're working locally (as here) with NPM workspaces, or using an actual
 NPM registry, the approach and command is the same.
@@ -324,8 +328,8 @@ This should emit:
 "northwhisper-productsummary"
 ```
 
-and is indeed what we expect, remembering back to what we observed after
-creating the package.
+and is indeed what we expect, remembering what we observed after creating the
+package.
 
 👉 Add the package as a dependency to the project:
 
@@ -502,7 +506,7 @@ At this point we should see something like this:
   `northwhisper/apis/productsummary/data/ProductSummary.ProductData.csv`)
 - As usual with `cds watch` (or more accurately with `cds serve all
   --with-mocks ...`) the required `ProductSummary` is mocked, because there is
-  no external bindinginformation that exists for it:
+  no external binding information that exists for it:
 
     ```log
     [cds] - mocking ProductSummary {
@@ -581,3 +585,10 @@ Well done!
    [xtravels](https://github.com/capire/xtravels) projects for an example of
    how the former provides a read-only API client package for use by the
    latter.
+1. For more on `toupper` and the use of functions in this context, see the
+   sections [Exploring function
+   expressions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#exploring-function-expressions)
+   and [Portable
+   functions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#portable-functions)
+   in the [notes to part 3 of the CDS expressions in CAP
+   series](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/).
