@@ -159,7 +159,7 @@ service ProductSummary {
 - Each element has a simpler alias name
 - Just for fun and some exposure to function expressions (see [Further
   info](#further-info)) the category is to be expressed in all-caps, via the
-  portable function `toupper`[<sup>2</sup>](#footnotes)
+  portable function `toupper`
 
 ### Check the new product summary service
 
@@ -567,6 +567,13 @@ Well done!
 - The [June 2026 release notes](https://cap.cloud.sap/docs/releases/2026/jun26)
   have information on the [new HCQL protocol
   adapter](https://cap.cloud.sap/docs/releases/2026/jun26#new-hcql-protocol-adapter)
+- For more on `toupper` and the use of functions in CDS model definitions, see
+  the sections [Exploring function
+  expressions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#exploring-function-expressions)
+  and [Portable
+  functions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#portable-functions)
+  in the [notes to part 3 of the CDS expressions in CAP
+  series](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/).
 
 ---
 
@@ -585,10 +592,3 @@ Well done!
    [xtravels](https://github.com/capire/xtravels) projects for an example of
    how the former provides a read-only API client package for use by the
    latter.
-1. For more on `toupper` and the use of functions in this context, see the
-   sections [Exploring function
-   expressions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#exploring-function-expressions)
-   and [Portable
-   functions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#portable-functions)
-   in the [notes to part 3 of the CDS expressions in CAP
-   series](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/).
