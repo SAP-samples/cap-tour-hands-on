@@ -158,7 +158,7 @@ service ProductSummary {
   denormalised ("flattened") by means of path expressions
 - Each element has a simpler alias name
 - Just for fun and some exposure to function expressions (see [Further
-  info](#furtherinfo)) the category is to be expressed in all-caps, via the
+  info](#further-info)) the category is to be expressed in all-caps, via the
   portable function `toupper`[<sup>2</sup>](#footnotes)
 
 ### Check the new product summary service
@@ -452,7 +452,7 @@ Do that now, so the `consumer/package.json` contents look like this:
 > The `"kind": "hcql"` property in there is deliberate, to start making us
 > think about what can arguably be seen as the wire equivalent of the lossless
 > API client package CSN definition - CQL over HTTP (see [Further
-> info](#furtherinfo)). We may include an exercise on HCQL in future.
+> info](#further-info)). We may include an exercise on HCQL in future.
 
 ### Start up the consumer project
 
