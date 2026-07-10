@@ -38,7 +38,7 @@ TODO - question about the "*/apis/*" entry here
 
 This will allow us to export the API client package from one project, and
 consume it in another, without a round-trip to any NPM registry (and all the
-authentication, authorizations and setup that would involve).
+authentication, authorisations and setup that would involve).
 
 ## Set up the provider project
 
@@ -81,7 +81,7 @@ current value of `baseproj` to something better.
 A regular service will typically make various entities available, and
 implicitly the relationships between them too. In an API client package it
 might be more appropriate to expose a flattened subset of the model. That's
-what we'll be doing in this exercise.
+what we'll be doing here.
 
 👉 Before we do, let's remind ourselves of the relationships between the
 entities, by looking at `northwhisper/db/schema.cds`, which shows that each
@@ -118,7 +118,11 @@ entity Categories {
 }
 ```
 
-### Define a new data service
+👉 Start a CAP server with `cds watch northwhisper` and then check out these
+relationships with an OData query operation like this:
+<http://localhost:4004/northwhisper/Products?$select=ProductName&$expand=Supplier($select=CompanyName),Category($select=CategoryName)>.
+
+### Define a new product summary service
 
 The main (and only) service right now in the northwhisper CDS model is defined
 in `srv/main.cds` and exposes all three entities.
@@ -126,14 +130,14 @@ in `srv/main.cds` and exposes all three entities.
 We'll now create a second service definition to be the heart of our API client
 package that we'll eventually export and make available.
 
-👉 In `northwhisper/srv/` create a new file `data.cds` with the following
-contents:
+👉 In `northwhisper/srv/` create a new file `productsummary.cds` with the
+following contents:
 
 ```cds
 using northwhisper from '../db/schema';
 
 @readonly  @hcql  @odata
-service Data {
+service ProductSummary {
 
   entity ProductData as
     projection on northwhisper.Products {
@@ -152,6 +156,109 @@ service Data {
   provide base data[<sup>1</sup>](#footnotes)
 - As well as via OData, this service is to be exposed via HCQL, a "CAP-native"
   protocol especially suited for CAP-to-CAP integration scenarios
+- The associations from `Products` to `Categories` and `Suppliers` have been
+  denormalised ("flattened") by means of path expressions
+- Each element has a simpler alias name
+
+### Check the new product summary service
+
+Let's see the effect of this service definition by starting a CAP server and
+looking at the corresponding entity set.
+
+👉 Make sure the CAP server has restarted after this addition, and take a brief
+look at the entityset in this new service:
+
+```bash
+curl \
+  --silent \
+  --url 'localhost:4004/odata/v4/product-summary/ProductData?$top=3' \
+  | jq .
+```
+
+It should show something like this, where the product, category and supplier
+information are in "flat" records:
+
+```json
+{
+  "@odata.context": "$metadata#ProductData",
+  "value": [
+    {
+      "ID": 1,
+      "name": "Chai",
+      "category": "Beverages",
+      "supplier": "Exotic Liquids"
+    },
+    {
+      "ID": 2,
+      "name": "Chang",
+      "category": "Beverages",
+      "supplier": "Exotic Liquids"
+    },
+    {
+      "ID": 3,
+      "name": "Aniseed Syrup",
+      "category": "Condiments",
+      "supplier": "Exotic Liquids"
+    }
+  ]
+}
+```
+
+### Create the API client package
+
+We now have all we need to create the API client package, which is essentially
+an exposed and reusable version of what we've just created.
+
+👉 Do that now, using the `--data` option to request not only the API
+definition but also sample data:
+
+```bash
+cds export --data srv/productsummary.cds
+```
+
+This should emit something like this:
+
+```log
+Exporting APIs to apis/productsummary ...
+
+  > apis/productsummary/index.cds
+  > apis/productsummary/services.csn
+  > apis/productsummary/package.json
+  > apis/productsummary/data/ProductSummary.ProductData.csv
+
+```
+
+👉 Take a moment to examine what is produced:
+
+- there's an `index.cds` file thats serves a similar "bootstrapping" purpose to
+  what we saw in the exercise where we were mocking messaging
+- given that this is a package that we should be able to add with NPM, there's
+  a basic `package.json` file generated with some basic information, including
+  the package name, which is made up from the "provider" package name (which we
+  changed earlier from `baseproj` to `northwhisper`) and the name of the
+  service upon which this API client package export was based
+- there's a `services.csn` file, which is the machine readable (CSN) version of
+  the service defined in `srv/producsummary.cds`
+- there's also a `data/` directory with a single CSV file representing the
+  dataset defined by the `ProductData` projection
+
+This last observation is worth thinking about.
+
+👉 Look at what the CSV file contains:
+
+```bash
+head -5 apis/productsummary/data/ProductSummary.ProductData.csv
+```
+
+We see that it's exactly that flattened summary we defined:
+
+```csv
+ID,name,category,supplier
+1,Chai,BEVERAGES,Exotic Liquids
+2,Chang,BEVERAGES,Exotic Liquids
+3,Aniseed Syrup,CONDIMENTS,Exotic Liquids
+4,Chef Anton's Cajun Seasoning,CONDIMENTS,New Orleans Cajun Delights
+```
 
 ## Further info
 
