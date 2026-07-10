@@ -260,7 +260,7 @@ ID,name,category,supplier
 4,Chef Anton's Cajun Seasoning,CONDIMENTS,New Orleans Cajun Delights
 ```
 
-> [!INFO]
+> [!NOTE]
 > At this point the API client package is all ready to go, and we might
 > normally at this point publish the package to an NPM registry with e.g. `npm
 > publish ./apis/productsummary`. But we'll omit this to avoid having to find,
