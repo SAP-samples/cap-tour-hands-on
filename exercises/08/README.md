@@ -260,6 +260,13 @@ ID,name,category,supplier
 4,Chef Anton's Cajun Seasoning,CONDIMENTS,New Orleans Cajun Delights
 ```
 
+> [!INFO]
+> At this point the API client package is all ready to go, and we might
+> normally at this point publish the package to an NPM registry with e.g. `npm
+> publish ./apis/productsummary`. But we'll omit this to avoid having to find,
+> authenticate with and use such a registry, and instead use the NPM workspaces
+> setup we have to stay local.
+
 ## Further info
 
 - The [June 2026 release notes](https://cap.cloud.sap/docs/releases/2026/jun26)
