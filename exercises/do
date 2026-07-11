@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+declare PROJLOC=..
+declare HERE
+HERE="$(dirname "$0")"
+
+ex01() {
+
+  echo "01 - Mocking auth"
+
+  rm -rf proj-01 \
+    && cp -a baseproj proj-01 \
+    && cd "$_" \
+    && tree
+
+  cat << EOENV > .env
+cds.requires.auth.kind=basic
+cds.requires.auth.users.alan.roles=["admin","finance"]
+EOENV
+
+  cat << EOSERVICE > srv/main.cds
+using northwhisper from '../db/schema';
+
+@path    : '/northwhisper'
+@requires: 'authenticated-user'
+service Main {
+
+  @restrict: [
+    {
+      grant: 'READ',
+      to   : 'any'
+    },
+    {
+      grant: 'WRITE',
+      to   : 'finance'
+    }
+  ]
+  entity Products   as projection on northwhisper.Products;
+
+  entity Suppliers  as projection on northwhisper.Suppliers;
+  entity Categories as projection on northwhisper.Categories;
+
+}
+EOSERVICE
+
+}
+
+main() {
+
+  local ex="${1:?Specify exercise number e.g. 01}"
+  [[ "${#ex}" == 1 ]] && ex="0${ex}" # zero prefix
+  cd "$HERE/$PROJLOC"
+  "ex$ex"
+
+}
+
+main "$@"
