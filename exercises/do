@@ -46,6 +46,89 @@ EOSERVICE
 
 }
 
+ex08() {
+
+  echo "08 - Discovering API client package export and reuse"
+
+  rm -rf proj-08 \
+    && mkdir proj-08 \
+    && cd "$_"
+
+  # Container
+
+  cat << EOCONTAINERPACKAGEJSON > package.json
+{
+  "workspaces": [
+    "*",
+    "*/apis/*"
+  ]
+}
+EOCONTAINERPACKAGEJSON
+
+  # Producer
+
+  cp -a ../baseproj northwhisper
+
+  sed --in-place \
+    's/"baseproj"/"northwhisper"/' \
+    northwhisper/package.json
+
+  cat << EOPRODUCTSUMMARY > northwhisper/srv/productsummary.cds
+using northwhisper from '../db/schema';
+
+@hcql  @odata
+service ProductSummary {
+
+  @readonly
+  entity ProductData as
+    projection on northwhisper.Products {
+      ProductID                      as ID,
+      ProductName                    as name,
+      toupper(Category.CategoryName) as category : String,
+      Supplier.CompanyName           as supplier
+    }
+
+}
+EOPRODUCTSUMMARY
+
+  pushd northwhisper \
+    && cds export --data srv/productsummary.cds \
+    && popd
+
+  # Consumer
+
+  mkdir consumer/ \
+    && cd $_
+
+  cat << EOCONSUMERPACKAGEJSON > package.json
+{
+  "name": "consumer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A simple consumer example project",
+  "dependencies": {
+    "@sap/cds": "^10"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true
+}
+EOCONSUMERPACKAGEJSON
+
+  sleep 0.1
+  jq .name ../northwhisper/apis/productsummary/package.json
+  npm add northwhisper-productsummary
+
+  cat << EOSERVICES > services.cds
+using from 'northwhisper-productsummary';
+EOSERVICES
+
+}
+
 main() {
 
   local ex="${1:?Specify exercise number e.g. 01}"

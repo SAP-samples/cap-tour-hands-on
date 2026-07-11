@@ -225,6 +225,7 @@ an exposed and reusable version of what we've just created.
 ```bash
 cd northwhisper/
 ```
+
 👉 Create the package, using the `--data` option to request not only the API
 definition but also sample data:
 
@@ -290,55 +291,67 @@ the projection.
 
 👉 Before continuing, make sure any CAP server for the provider project is
 stopped (mostly because we don't need it running, and we don't want to have any
-port clashes when we eventually start up a server for the consumer project).
+port clashes when running a CAP server at the consumer end).
 
-## Set up the consumer project
+## Set up the consumer
 
-To achieve the simplest end-to-end scenario here, we should consume this API
-client package in another project. So let's set one up here, keeping things as
-simple as possible.
+Let's channel the great Ward Cunningham here and start with the simplest thing
+that could possibly work[<sup>2</sup>](#footnotes). Amongst other things, it
+will help us focus on what's needed (clue: not much) to consume such an API
+client package.
 
-### Create a tiny-sample based project
+We'll start by creating a barebones consumer project.
 
-👉 First, move back out from the `northwhisper/` directory and up one level
-into the `proj-08/` directory:
+### Create a bare bones project
 
-```bash
-cd ..
-```
+The [cdsnano](https://github.com/qmacro/dotfiles/blob/main/scripts/cdsnano) script
+in my dotfiles, along with a corresponding [template directory](https://github.com/qmacro/dotfiles/tree/main/scripts/cdsnano-template)
+represents an even tinier `tiny-sample` based starter project.
 
-Remember that this `proj-08/` directory is the "container" for both provider
-and consumer projects and has a simple `package.json` file enabling the NPM
-workspaces mechanism.
+Going smaller still to a bare bones project, let's just start with a `package.json`
+file and an empty `services.cds` file.
 
-👉 Create a consumer project based on the `tiny-sample` facet, specifying also
-the `nodejs` facet, so that we get a `package.json` file which we'll need to
-capture and store the dependency on the API client package we'll be adding
-shortly:
+👉 Within the `proj-08/` containing directory, create a directory for the
+consumer and move into it:
 
 ```bash
-cds init --add nodejs,tiny-sample consumer
+mkdir consumer/ \
+  && cd $_
 ```
 
-The `tiny-sample` facet adds a super simple CDS model which is just a catalog
-service containing a single entity `Books` with a handful of records.
+👉 Within this new `consumer/` directory, create a `package.json` file with the
+following content (basically a cds 10 CAP Node.js starter `package.json` file
+as reflected in the [cdsnano
+template](https://github.com/qmacro/dotfiles/blob/main/scripts/cdsnano-template/package.json)):
 
-> It doesn't matter too much here about how realistic it might be to use a
-> "products" package in this context; the important thing is to keep things
-> simple so we can focus on the mechanics.
+```json
+{
+  "name": "consumer",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A simple consumer example project",
+  "dependencies": {
+    "@sap/cds": "^10"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^3"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true
+}
+```
 
 ### Add the API client package as a dependency
 
-Now within the consumer project directory (`consumer/`) we are ready to
-"consume" the API client package. The first step is to add it as a dependency.
-
-Whether we're working locally (as here) with NPM workspaces, or using an actual
-NPM registry, the approach and command is the same.
+All we need to do to be able to enjoy the model and contents of the API client
+package is to use the standard approach of adding it as a dependency via NPM.
 
 👉 First, let's double-check our API client package name:
 
 ```bash
-jq .name northwhisper/apis/productsummary/package.json
+jq .name ../northwhisper/apis/productsummary/package.json
 ```
 
 This should emit:
@@ -353,8 +366,7 @@ package.
 👉 Add the package as a dependency to the project:
 
 ```bash
-cd consumer/ \
-  && npm add northwhisper-productsummary
+npm add northwhisper-productsummary
 ```
 
 The output looks familiar:
@@ -365,20 +377,10 @@ added 112 packages, and audited 114 packages in 5s
 found 0 vulnerabilities
 ```
 
-but if we look (with, say, `tree`) at the project contents, we don't see any
-`node_modules/` directory or a `package-lock.json` file:
+👉 Look in the current project directory (e.g. with the Explorer or with `ls`).
 
-```log
-.
-├── app
-├── db
-│   └── data
-│       └── CatalogService.Books.csv
-├── package.json
-├── readme.md
-└── srv
-    └── cat-service.cds
-```
+There is neither a `node_modules/` directory nor a `package-lock.json` file -
+just the `package.json`.
 
 That's because of the NPM workspaces context - the package directory and lock
 file are at the containing directory's level (i.e. where the `package.json`
@@ -388,175 +390,106 @@ What has changed, however, is the important part - the consumer project's
 dependencies now also include the API client package
 `northwhisper-productsummary`.
 
-👉 Examine that now in the consumer's `package.json` file, which should look
-like this:
+👉 Examine that now in the consumer's `package.json` file, in which the
+`dependencies` property should look like this:
 
 ```json
 {
-  "name": "consumer",
-  "version": "1.0.0",
-  "type": "module",
   "dependencies": {
     "@sap/cds": "^10",
     "northwhisper-productsummary": "^1.0.0"
-  },
-  "devDependencies": {
-    "@cap-js/sqlite": "^3"
-  },
-  "scripts": {
-    "start": "cds-serve"
-  },
-  "private": true
-}
-```
-
-### Add in a requirement for the package
-
-All that's left for us to do is to define a requirement for this API client
-package in the configuration for our consumer project. We can do this simply by
-adding a `package.json#cds.requires` stanza.
-
-Do that now, so the `consumer/package.json` contents look like this:
-
-```json
-{
-  "name": "consumer",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@sap/cds": "^10",
-    "northwhisper-productsummary": "^1.0.0"
-  },
-  "devDependencies": {
-    "@cap-js/sqlite": "^3"
-  },
-  "scripts": {
-    "start": "cds-serve"
-  },
-  "private": true,
-  "cds": {
-    "requires": {
-      "northwhisper-productsummary": {
-        "kind": "hcql",
-        "model": "northwhisper-productsummary"
-      }
-    }
   }
 }
 ```
 
-> The `"kind": "hcql"` property in there is deliberate, to start making us
-> think about what can arguably be seen as the wire equivalent of the lossless
-> API client package CSN definition - CQL over HTTP (see [Further
-> info](#further-info)). We may include an exercise on HCQL in future.
+### Take stock of what we have so far
 
-### Start up the consumer project
+So at this point we have a NPM project file `package.json` in our consumer project.
 
-At this point, we can start a CAP server for the consumer project, and see what
-happens.
-
-👉 Run `cds watch` in the consumer project directory:
+👉 Double check the dependencies in a similar way to how we did it in exercise
+[03 - Creating a plugin](../03/README.md):
 
 ```bash
-cds watch
+jq '.dependencies + .devDependencies' package.json
 ```
 
-At this point we should see something like this:
+This should show us that the project needs the `@sap/cds` runtime, the SQLite
+driver provided by `@cap-js/sqlite` ... and our API client package
+`northwhisper-productsummary`:
+
+```json
+{
+  "@sap/cds": "^10",
+  "northwhisper-productsummary": "^1.0.0",
+  "@cap-js/sqlite": "^3"
+}
+```
+
+### Create the basis for a consumption view
+
+Let's now continue with the "simplest thing that could possibly work" theme.
+
+👉 Create a `services.cds`[<sup>3</sup>](#footnotes) file (next to the
+`package.json` file) with this single line:
+
+```cds
+using from 'northwhisper-productsummary';
+```
+
+To get started, that's all we need!
+
+### Start a cds REPL for the consumer project
+
+To prove that, let's dive into a cds REPL session.
+
+👉 Start a cds REPL session (still in the `consumer/` directory), specifying
+the `--run` option to have a CAP server started for the current (minimal!)
+project:
+
+```bash
+cds repl --run .
+```
+
+Goodness, what beautiful output!
 
 ```log
+[cds] - using bindings from: { registry: '~/.cds-services.json' }
 [cds] - loaded model from 3 file(s):
 
-  northwhisper/apis/productsummary/index.cds
-  consumer/srv/cat-service.cds
-  northwhisper/apis/productsummary/services.csn
+  services.cds
+  ../northwhisper/apis/productsummary/index.cds
+  ../northwhisper/apis/productsummary/services.csn
 
-[cds] - using bindings from: { registry: '~/.cds-services.json' }
 [cds] - connect to db > sqlite { url: ':memory:' }
-  > init from consumer/db/data/CatalogService.Books.csv
-  > init from northwhisper/apis/productsummary/data/ProductSummary.ProductData.csv
+  > init from ../northwhisper/apis/productsummary/data/ProductSummary.ProductData.csv
 /> successfully deployed to in-memory database.
 
 [cds] - using auth strategy { kind: 'mocked' }
 [cds] - mocking ProductSummary {
   at: [ '/odata/v4/product-summary', '/hcql/product-summary' ],
-  decl: 'northwhisper/apis/productsummary/services.csn:3'
+  decl: '../northwhisper/apis/productsummary/services.csn:3'
 }
-[cds] - serving CatalogService {
-  at: [ '/odata/v4/catalog' ],
-  decl: 'consumer/srv/cat-service.cds:1'
-}
-[cds] - server listening on { url: 'http://localhost:4004' }
-[cds] - server v10.0.3 launched in 3586 ms
+[cds] - server listening on { url: 'http://localhost:42335' }
+[cds] - server v10.0.3 launched in 3774 ms
 [cds] - [ terminate with ^C ]
-```
 
-👉 Take a moment to peruse these log records, and notice:
 
-- Not only are the consumer project's own definitions (in
-  `consumer/srv/cat-service.cds`) in the model, but also the definitions from
-  the API client package, "front-doored" by
-  `northwhisper/apis/productsummary/index.cds` which in turn points to
-  `northwhisper/apis/productsummary/services.csn`
-- Correspondingly, the sample data that was also part of the API client package
-  created (with `cds export --data ...`) is available and loaded (from
-  `northwhisper/apis/productsummary/data/ProductSummary.ProductData.csv`)
-- As usual with `cds watch` (or more accurately with `cds serve all
-  --with-mocks ...`) the required `ProductSummary` is mocked, because there is
-  no external binding information that exists for it:
+------------------------------------------------------------------------
+Following variables are made available in your repl's global context:
 
-    ```log
-    [cds] - mocking ProductSummary {
-      at: [ '/odata/v4/product-summary', '/hcql/product-summary' ],
-      decl: 'northwhisper/apis/productsummary/services.csn:3'
-    }
-    ```
-
-👉 Take a brief look in the local binding registry (file
-`~/.cds-services.json`), which should contain something like this:
-
-```json
-{
-  "cds": {
-    "provides": {
-      "ProductSummary": {
-        "endpoints": {
-          "odata": "/odata/v4/product-summary",
-          "hcql": "/hcql/product-summary"
-        },
-        "server": 25581
-      },
-      "CatalogService": {
-        "endpoints": {
-          "odata": "/odata/v4/catalog"
-        },
-        "server": 25581
-      }
-    },
-    "servers": {
-      "25581": {
-        "root": "file:///work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-08/consumer",
-        "url": "http://localhost:4004"
-      }
-    }
-  }
+from cds.entities: {
 }
+
+from cds.services: {
+  db,
+  scheduling,
+  ProductSummary,
+}
+
+Simply type e.g. ProductSummary in the prompt to use the respective objects.
 ```
 
-We can see that the API client package definitions are being served as defined,
-via OData and HCQL.
-
-### Request the product summary data
-
-At this point we've dovetailed into the service integration CodeJam and
-everything is effectively downstream from here. Let's round this exercise off
-by looking at the CAP server landing page and confirming that the package is
-available and being mocked appropriately.
-
-👉 Visit the landing page at <http://localhost:4004/> and select the
-<http://localhost:4004/odata/v4/product-summary/ProductData> resource,
-whereupon we should see the flattened product data from before.
-
-Well done!
+TO-BE-CONTINUED
 
 ## Further info
 
@@ -590,6 +523,10 @@ Well done!
    Think about how we use `cds import` and what formats that reads and writes.
    How do the two approaches compare? Can you identify the "lossy" vs
    "lossless" ideas here?
+1. When we added the `using from 'northwhisper-productsummary';` line in
+   `services.cds`, how does the compiler know that this is a package that it
+   should look inside, and not a file or directory?
+
 
 ---
 
@@ -599,3 +536,11 @@ Well done!
    [xtravels](https://github.com/capire/xtravels) projects for an example of
    how the former provides a read-only API client package for use by the
    latter.
+1. [Ward Cunningham](https://en.wikipedia.org/wiki/Ward_Cunningham) invented
+   the wiki, co-authored the Manifesto For Agile Software Development and is an
+   all-round nice guy. For more info on this "simplest thing that could
+   possibly work" idea, you might enjoy [a reading of an interview with him on
+   this
+   topic](https://creators.spotify.com/pod/profile/tech-aloud/episodes/The-Simplest-Thing-that-Could-Possibly-Work--A-conversation-with-Ward-Cunningham--Part-V---Bill-Venners-e5dpts).
+1. See [Why I use services.cds in simple CDS model
+   examples](https://qmacro.org/blog/posts/2026/01/02/why-i-use-services-cds-in-simple-cds-model-examples/).
