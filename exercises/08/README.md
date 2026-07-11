@@ -22,8 +22,7 @@ Normally the package would be published to an NPM registry and then `npm
 add`-ed from there to the consuming project. But to stay local, we'll use the
 NPM workspaces concept again like we did in an earlier exercise.
 
-👉 Create a `package.json` file with following
-content:
+👉 Create a `package.json` file with the following content:
 
 ```json
 {
@@ -174,8 +173,8 @@ service ProductSummary {
 
 ### Check the new product summary service
 
-Let's see the effect of this service definition by starting a CAP server and
-looking at the corresponding entity set.
+Let's see the effect of this service definition by looking at the corresponding
+entity set.
 
 👉 Make sure the CAP server has restarted after this addition, and take a brief
 look at the entityset in this new service:
