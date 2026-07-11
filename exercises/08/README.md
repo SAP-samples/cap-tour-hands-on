@@ -134,9 +134,10 @@ following contents:
 ```cds
 using northwhisper from '../db/schema';
 
-@readonly  @hcql  @odata
+@hcql  @odata
 service ProductSummary {
 
+  @readonly
   entity ProductData as
     projection on northwhisper.Products {
       ProductID                      as ID,
@@ -150,8 +151,8 @@ service ProductSummary {
 
 👉 Take note of the following details in this definition:
 
-- the service is read-only, not untypical for API client packages that serve to
-  provide base data[<sup>1</sup>](#footnotes)
+- the service content is read-only, not untypical for API client packages that
+  serve to provide base data[<sup>1</sup>](#footnotes)
 - As well as via OData, this service is to be exposed via HCQL, a "CAP-native"
   protocol especially suited for CAP-to-CAP integration scenarios
 - The associations from `Products` to `Categories` and `Suppliers` have been
@@ -160,6 +161,16 @@ service ProductSummary {
 - Just for fun and some exposure to function expressions (see [Further
   info](#further-info)) the category is to be expressed in all-caps, via the
   portable function `toupper`
+
+> [!NOTE]
+> Taking a step back, "one level up", as it were, observe also what we're doing
+> here, which is to define a completely separate service for this. Services are
+> cheap, and it is actually an anti-pattern to combine definitions into a
+> single or just a few services. The separation between schema (`db/`) and
+> service (`srv/`) layers is there for a reason, think of a decent layer of
+> lubrication between these layers, and of space between services.
+>
+> See the [Further info](#further-info) section for more on service best practices.
 
 ### Check the new product summary service
 
@@ -560,6 +571,17 @@ Well done!
   functions](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/#portable-functions)
   in the [notes to part 3 of the CDS expressions in CAP
   series](https://qmacro.org/blog/posts/2026/03/23/cds-expressions-in-cap-notes-on-part-3/).
+- [Services are
+  cheap](https://github.com/qmacro/capref/blob/main/axioms/AXI004.md), so
+  there's no reason to bunch everything together into a one-size-fits-all
+  service. Right at the very start, Capire leads us towards the best practice
+  of [using case-specific
+  services](https://cap.cloud.sap/docs/get-started/bookshop#use-case-specific-services),
+  which is expanded upon in the [case-oriented
+  services](https://cap.cloud.sap/docs/guides/services/providing-services#use-case-oriented-services)
+  section of the [Define Provided
+  Services](https://cap.cloud.sap/docs/guides/services/providing-services)
+  topic.
 
 ---
 
