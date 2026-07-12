@@ -502,7 +502,7 @@ HTTP/1.1 200 OK
    of just three entities Products, Suppliers and Categories, and with just the
    bare minimum number of elements in each. The project has some corresponding
    initial data for each of these entities. The name of the service is
-   "Northwisper", a further step in the evolution towards minimalism
+   "Northwhisper", a further step in the evolution towards minimalism
    ("Northwind" -> "Northbreeze" -> "Northwhisper").
 
 1. See the [Remote services, proxies and

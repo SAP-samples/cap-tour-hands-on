@@ -579,7 +579,7 @@ Simply type e.g. ProductSummary in the prompt to use the respective objects.
   "loaded models from 3 file(s)" message
 - The sample data from within the API client package is also loaded and
   deployed to the in-memory SQLite database
-- The CAP server recognises the `northwisper-productsummary` as a "non-local"
+- The CAP server recognises the `northwhisper-productsummary` as a "non-local"
   service (which has no external bindings, nothing in `~/.cds-services.json`)
   and mocks it for us
 - In doing so, the protocol annotations in the imported package definition
