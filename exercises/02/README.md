@@ -203,7 +203,9 @@ PORT=4006 cds watch emitter
 >
 > then as a workaround (this is due to the move to ESM in cds 10) while the
 > issue is addressed (should be resolved with 10.0.5), remove the
-> `"type":"module"` property in the emitter's `package.json` file.
+> `"type":"module"` property in the emitter's `package.json` file. You may
+> have to do the same for the receiver later (look out for a note similar to
+> this).
 
 We see log output like this, as expected:
 
@@ -443,6 +445,15 @@ It's now time to fire up the receiver.
 ```bash
 cds watch receiver
 ```
+
+> As earlier, you may see an error like this at startup:
+>
+> ```log
+> ReferenceError: require is not defined in ES module scope, you can use import instead
+> ```
+>
+> Use the same temporary workaround as before, by removing the
+> `"type":"module"` property in the receiver's `package.json` file.
 
 You should see log output like this:
 
