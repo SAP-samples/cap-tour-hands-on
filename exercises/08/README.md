@@ -17,6 +17,26 @@ rm -rf proj-08 \
   && cd $_
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+Remove-Item -Recurse -Force proj-08 -ErrorAction SilentlyContinue
+New-Item -ItemType Directory proj-08 | Out-Null
+Set-Location proj-08
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+rmdir /s /q proj-08 2>nul & mkdir proj-08 & cd proj-08
+```
+
+</details>
+
 We're going to create an API client package, then use it in another project.
 Normally the package would be published to an NPM registry and then `npm
 add`-ed from there to the consuming project. But to stay local, we'll use the
@@ -54,6 +74,23 @@ our main project directory.
 ```bash
 cp -a ../baseproj northwhisper
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+PowerShell:
+
+```powershell
+Copy-Item -Recurse ../baseproj northwhisper
+```
+
+cmd:
+
+```cmd
+xcopy ..\baseproj northwhisper /e /i /q
+```
+
+</details>
 
 The value of the `name` property in the project's `package.json` file becomes
 significant when we create an API client package, so let's change it from the
@@ -186,6 +223,34 @@ curl \
   | jq .
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+Apply the usual Windows `curl` adjustments (they apply to every `curl` in this
+exercise):
+
+1. Replace the bash line-continuation `\` with a backtick `` ` `` (PowerShell)
+   or caret `^` (cmd), or put it on one line.
+2. In PowerShell call `curl.exe` (plain `curl` is an alias for
+   `Invoke-WebRequest`); in cmd plain `curl` is fine.
+3. Quote the URL so the `$` in `$top` is passed through literally: use **single**
+   quotes in PowerShell (inside double quotes, `$top` would be read as a
+   variable and the URL would break), and **double** quotes in cmd.
+
+PowerShell (single quotes):
+
+```powershell
+curl.exe --silent --url 'localhost:4004/odata/v4/product-summary/ProductData?$top=3' | jq .
+```
+
+cmd:
+
+```cmd
+curl --silent --url "localhost:4004/odata/v4/product-summary/ProductData?$top=3" | jq .
+```
+
+</details>
+
 It should show something like this, where the product, category and supplier
 information are in "flat" records:
 
@@ -267,6 +332,25 @@ It's worth digging in a little to this last observation.
 head -5 apis/productsummary/data/ProductSummary.ProductData.csv
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+There's no `head` command; show the first few lines like this.
+
+PowerShell:
+
+```powershell
+Get-Content apis/productsummary/data/ProductSummary.ProductData.csv -TotalCount 5
+```
+
+cmd (prints all lines, prefixed with line numbers — read the first five):
+
+```cmd
+type apis\productsummary\data\ProductSummary.ProductData.csv | more
+```
+
+</details>
+
 We see that it's exactly that flattened summary we defined:
 
 ```csv
@@ -318,6 +402,24 @@ consumer and move into it:
 mkdir consumer/ \
   && cd $_
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+PowerShell:
+
+```powershell
+New-Item -ItemType Directory consumer | Out-Null
+Set-Location consumer
+```
+
+cmd:
+
+```cmd
+mkdir consumer & cd consumer
+```
+
+</details>
 
 👉 Within this new `consumer/` directory, create a `package.json` file with the
 following content (basically a cds 10 CAP Node.js starter `package.json` file
@@ -412,6 +514,17 @@ So at this point we have a NPM project file `package.json` in our consumer proje
 ```bash
 jq '.dependencies + .devDependencies' package.json
 ```
+
+<details>
+<summary>Windows (cmd)</summary>
+
+Works as-is in PowerShell. In cmd, use double quotes around the `jq` filter:
+
+```cmd
+jq ".dependencies + .devDependencies" package.json
+```
+
+</details>
 
 This should show us that the project needs the `@sap/cds` runtime, the SQLite
 driver provided by `@cap-js/sqlite` ... and our API client package
