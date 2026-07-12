@@ -104,6 +104,53 @@ EOMAINCDS
 
 }
 
+ex03() {
+
+  echo "03 - Creating a plugin"
+
+  rm -rf proj-03 \
+    && cp -a baseproj proj-03 \
+    && cd "$_" \
+    && tree
+
+  npm install
+
+  npm init \
+    --yes \
+    --workspace flags
+
+  cat << EOANNOTATIONSCDS > srv/annotations.cds
+using Main from './main';
+
+annotate Main.Suppliers : Country with @flagify;
+EOANNOTATIONSCDS
+
+  npm add flags
+
+  cat << EOFLAGSJSON > flags/flags.json
+{
+  "Australia": "🇦🇺",
+  "Brazil": "🇧🇷",
+  "Canada": "🇨🇦",
+  "Denmark": "🇩🇰",
+  "Finland": "🇫🇮",
+  "France": "🇮🇹",
+  "Germany": "🇩🇪",
+  "Italy": "🇮🇹",
+  "Japan": "🇯🇵",
+  "Netherlands": "🇳🇱",
+  "Singapore": "🇸🇬",
+  "Spain": "🇪🇸",
+  "Sweden": "🇸🇪",
+  "UK": "🇬🇧",
+  "USA": "🇺🇸"
+}
+EOFLAGSJSON
+
+  cp "../$HERE/03/assets/flags/cds-plugin.js" flags/
+
+}
+
 ex05() {
 
   echo "05 - Exploring status-transition flows"
