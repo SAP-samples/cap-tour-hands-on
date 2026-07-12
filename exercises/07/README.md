@@ -63,7 +63,7 @@ follows:
 
 ```bash
 curl -s localhost:4004/northwhisper/Categories \
-| jq -r .value[].CategoryName
+| jq -r '.value[].CategoryName'
 ```
 
 This should show us:
