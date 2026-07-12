@@ -210,6 +210,21 @@ EOANNOTATIONS
 
 }
 
+ex06() {
+
+  echo "06 - Testing your services"
+
+  cd proj-05/
+  cds add nodejs && rmdir app/ srv/ db/
+  npm install --save-dev @cap-js/cds-test
+
+  # temp fix for cds 10 / ESM until 10.0.5
+  sed --in-place 's/"type"/"_type"/' package.json
+
+  cp -a "../$HERE/06/assets/test/" .
+
+}
+
 ex08() {
 
   echo "08 - Discovering API client package export and reuse"
