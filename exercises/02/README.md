@@ -195,6 +195,16 @@ receiver on that port instead.
 PORT=4006 cds watch emitter
 ```
 
+> If you see an error on startup like this:
+>
+> ```log
+> ReferenceError: require is not defined in ES module scope, you can use import instead
+> ```
+>
+> then as a workaround (this is due to the move to ESM in cds 10) while the
+> issue is addressed (whould be resolved with 10.0.5), remove the
+> `"type":"module"` property in the emitter's `package.json` file.
+
 We see log output like this, as expected:
 
 ```log
