@@ -21,6 +21,27 @@ rm -rf proj-07 \
   && tree
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+Remove-Item -Recurse -Force proj-07 -ErrorAction SilentlyContinue
+Copy-Item -Recurse baseproj proj-07
+Set-Location proj-07
+tree /F
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+rmdir /s /q proj-07 2>nul & xcopy baseproj proj-07 /e /i /q & cd proj-07 & tree /f
+```
+
+</details>
+
 We should be familiar with this base project, a cut-down version of Northwind, with
 products, suppliers and categories.
 
@@ -66,6 +87,37 @@ curl -s localhost:4004/northwhisper/Categories \
 | jq -r '.value[].CategoryName'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+The `curl` commands in this exercise need the usual Windows adjustments, which
+apply to every `curl` that follows:
+
+1. Replace the bash line-continuation `\` with a backtick `` ` `` (PowerShell)
+   or caret `^` (cmd), or put the command on one line.
+2. In PowerShell call `curl.exe` (plain `curl` is an alias for
+   `Invoke-WebRequest`); in cmd plain `curl` is fine.
+3. For the create requests later that send a JSON `--data` payload, quote it
+   for the shell: escape inner double quotes as `\"` in PowerShell or `""` in
+   cmd. (The requests that use `--data @file.json` read from a file, so they
+   need no payload quoting.)
+
+This first piped command as a single line —
+
+PowerShell:
+
+```powershell
+curl.exe -s localhost:4004/northwhisper/Categories | jq -r ".value[].CategoryName"
+```
+
+cmd:
+
+```cmd
+curl -s localhost:4004/northwhisper/Categories | jq -r ".value[].CategoryName"
+```
+
+</details>
+
 This should show us:
 
 ```text
@@ -101,6 +153,24 @@ curl \
   --data '{"CategoryID":9,"CategoryName":"my new category"}' \
   --url localhost:4004/northwhisper/Categories
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '{"CategoryID":9,"CategoryName":"my new category"}' --url localhost:4004/northwhisper/Categories
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data "{""CategoryID"":9,""CategoryName"":""my new category""}" --url localhost:4004/northwhisper/Categories
+```
+
+> The PowerShell payload examples in this exercise need PowerShell 7+; Windows
+> PowerShell 5.1 mangles inline double quotes passed to native programs. On 5.1,
+> put the JSON in a file and use curl's `--data '@payload.json'` form. (The
+> requests later that already use `--data @file.json` work on any shell.)
+
+</details>
 
 This should work fine:
 
@@ -184,6 +254,19 @@ curl \
   --url localhost:4004/northwhisper/Categories
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '{"CategoryID":9,"CategoryName":"my new category"}' --url localhost:4004/northwhisper/Categories
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data "{""CategoryID"":9,""CategoryName"":""my new category""}" --url localhost:4004/northwhisper/Categories
+```
+
+</details>
+
 This time we get:
 
 ```log
@@ -211,6 +294,19 @@ curl \
   --data '{"CategoryID":9,"Description":"","CategoryName":"my new category"}' \
   --url localhost:4004/northwhisper/Categories
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '{"CategoryID":9,"Description":"","CategoryName":"my new category"}' --url localhost:4004/northwhisper/Categories
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data "{""CategoryID"":9,""Description"":"""",""CategoryName"":""my new category""}" --url localhost:4004/northwhisper/Categories
+```
+
+</details>
 
 ## Get to know the general @assert constraint
 
@@ -301,6 +397,26 @@ directory for this exercise) which looks like this:
 cp ../exercises/07/assets/pulses-and-seeds.json .
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+Same copy, different command (this exercise copies a second asset file later in
+the same way):
+
+PowerShell:
+
+```powershell
+Copy-Item ../exercises/07/assets/pulses-and-seeds.json .
+```
+
+cmd:
+
+```cmd
+copy ..\exercises\07\assets\pulses-and-seeds.json .
+```
+
+</details>
+
 👉 Use the file in an OData create operation on the `Categories` entityset:
 
 ```bash
@@ -310,6 +426,22 @@ curl \
   --data @pulses-and-seeds.json \
   --url localhost:4004/northwhisper/Categories
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+The `--data @file` form reads the payload from a file, so there's no JSON to
+quote — just call `curl.exe` in PowerShell:
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '@pulses-and-seeds.json' --url localhost:4004/northwhisper/Categories
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data @pulses-and-seeds.json --url localhost:4004/northwhisper/Categories
+```
+
+</details>
 
 This is what should be emitted:
 
@@ -408,6 +540,19 @@ curl \
   --url localhost:4004/northwhisper/Categories
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '@pulses-and-seeds.json' --url localhost:4004/northwhisper/Categories
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data @pulses-and-seeds.json --url localhost:4004/northwhisper/Categories
+```
+
+</details>
+
 And enjoy the glory of success!
 
 ```log
@@ -466,6 +611,19 @@ curl \
   --url localhost:4004/northwhisper/Suppliers/30
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --url localhost:4004/northwhisper/Suppliers/30
+```
+
+```cmd
+curl --include --url localhost:4004/northwhisper/Suppliers/30
+```
+
+</details>
+
 It doesn't:
 
 ```log
@@ -486,6 +644,19 @@ curl \
   --data @eastvleteren-12.json \
   --url localhost:4004/northwhisper/Products
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '@eastvleteren-12.json' --url localhost:4004/northwhisper/Products
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data @eastvleteren-12.json --url localhost:4004/northwhisper/Products
+```
+
+</details>
 
 It works:
 
@@ -559,6 +730,19 @@ curl \
   --data @eastvleteren-12.json \
   --url localhost:4004/northwhisper/Products
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --header "Content-Type: application/json" --data '@eastvleteren-12.json' --url localhost:4004/northwhisper/Products
+```
+
+```cmd
+curl --include --header "Content-Type: application/json" --data @eastvleteren-12.json --url localhost:4004/northwhisper/Products
+```
+
+</details>
 
 This time, the request is denied:
 

@@ -18,6 +18,26 @@ rm -rf proj-05 \
   && cd $_
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+Remove-Item -Recurse -Force proj-05 -ErrorAction SilentlyContinue
+New-Item -ItemType Directory proj-05 | Out-Null
+Set-Location proj-05
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+rmdir /s /q proj-05 2>nul & mkdir proj-05 & cd proj-05
+```
+
+</details>
+
 We'll keep things simple so as not to distract from the feature we want to
 understand.
 
@@ -103,6 +123,35 @@ curl \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+A Windows equivalent is given under each `curl` in this exercise. The rules,
+applied below: replace the bash line-continuation `\` with a backtick `` ` ``
+(PowerShell) or caret `^` (cmd), or use one line; in PowerShell call `curl.exe`
+(plain `curl` is an alias for `Invoke-WebRequest`); and quote the JSON payload
+by wrapping it in single quotes with no escaping in **PowerShell 7+**, or
+doubling the inner double quotes as `""` in cmd.
+
+PowerShell 7+:
+
+```powershell
+curl.exe --silent --header "Content-Type: application/json" --data '{"ID":1}' --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+cmd:
+
+```cmd
+curl --silent --header "Content-Type: application/json" --data "{""ID"":1}" --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+> Windows PowerShell 5.1 (bundled with Windows) mangles inline double quotes
+> passed to native programs, so the PowerShell payload examples need
+> PowerShell 7+. On 5.1, put the JSON in a file and use curl's
+> `--data '@payload.json'` form instead.
+
+</details>
+
 This should return something like this (note the default position of `Neutral`):
 
 ```json
@@ -125,6 +174,19 @@ curl \
   --data '{"ID":2,"position":"Forward"}'  \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --silent --header "Content-Type: application/json" --data '{"ID":2,"position":"Forward"}' --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+```cmd
+curl --silent --header "Content-Type: application/json" --data "{""ID"":2,""position"":""Forward""}" --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+</details>
 
 This also returns something similar:
 
@@ -150,6 +212,19 @@ curl \
   --include \
   --url 'localhost:4004/odata/v4/morse/Controls/1/engageReverse'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --request POST --include --url "localhost:4004/odata/v4/morse/Controls/1/engageReverse"
+```
+
+```cmd
+curl --request POST --include --url "localhost:4004/odata/v4/morse/Controls/1/engageReverse"
+```
+
+</details>
 
 Not entirely unexpectedly, we get an error:
 
@@ -184,6 +259,19 @@ curl \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --request PATCH --header "Content-Type: application/json" --data '{"position":"Reverse"}' --silent --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+```cmd
+curl --request PATCH --header "Content-Type: application/json" --data "{""position"":""Reverse""}" --silent --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+</details>
+
 That worked - we got:
 
 ```json
@@ -207,6 +295,19 @@ curl \
   --silent \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --request PATCH --header "Content-Type: application/json" --data '{"position":"Forward"}' --silent --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+```cmd
+curl --request PATCH --header "Content-Type: application/json" --data "{""position"":""Forward""}" --silent --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+</details>
 
 Yikes!
 
@@ -297,6 +398,19 @@ curl \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --silent --header "Content-Type: application/json" --data '{"ID":1}' --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+```cmd
+curl --silent --header "Content-Type: application/json" --data "{""ID"":1}" --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+</details>
+
 Success:
 
 ```json
@@ -322,6 +436,19 @@ curl \
   --url 'localhost:4004/odata/v4/morse/Controls'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --silent --header "Content-Type: application/json" --data '{"ID":2,"position":"Forward"}' --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+```cmd
+curl --silent --header "Content-Type: application/json" --data "{""ID"":2,""position"":""Forward""}" --url "localhost:4004/odata/v4/morse/Controls"
+```
+
+</details>
+
 Ooh! We get a control back, but with an initial position of `Neutral`:
 
 ```json
@@ -341,6 +468,26 @@ has been automatically given a `@readonly` annotation too.
 cds compile . \
   | jq '.definitions["Morse.Controls"].elements'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+The pipe and `jq` work the same; drop the bash line-continuation `\` and put it
+on one line (use double quotes for the `jq` filter in cmd):
+
+PowerShell:
+
+```powershell
+cds compile . | jq '.definitions["Morse.Controls"].elements'
+```
+
+cmd:
+
+```cmd
+cds compile . | jq ".definitions[\"Morse.Controls\"].elements"
+```
+
+</details>
 
 This should emit something like this, where the `@readonly` annotation is evident:
 
@@ -378,6 +525,19 @@ curl \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --request PATCH --header "Content-Type: application/json" --data '{"position":"Reverse"}' --silent --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+```cmd
+curl --request PATCH --header "Content-Type: application/json" --data "{""position"":""Reverse""}" --silent --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+</details>
+
 We get a big, subtle "nope!":
 
 ```json
@@ -403,6 +563,19 @@ still in the `Neutral` position:
    --include \
    --url 'localhost:4004/odata/v4/morse/Controls/1/engageForward'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --include --url "localhost:4004/odata/v4/morse/Controls/1/engageForward"
+```
+
+```cmd
+curl --include --url "localhost:4004/odata/v4/morse/Controls/1/engageForward"
+```
+
+</details>
 
 Oops!
 
@@ -431,6 +604,19 @@ HTTP POST is required.
    --url 'localhost:4004/odata/v4/morse/Controls/1/engageForward'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --request POST --include --url "localhost:4004/odata/v4/morse/Controls/1/engageForward"
+```
+
+```cmd
+curl --request POST --include --url "localhost:4004/odata/v4/morse/Controls/1/engageForward"
+```
+
+</details>
+
 We get:
 
 ```log
@@ -446,6 +632,19 @@ Clean and simple. But let's double check anyway.
 curl \
   --url 'localhost:4004/odata/v4/morse/Controls/1'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+```cmd
+curl --url "localhost:4004/odata/v4/morse/Controls/1"
+```
+
+</details>
 
 Yep, that worked:
 
@@ -467,6 +666,19 @@ curl \
   --include \
   --url 'localhost:4004/odata/v4/morse/Controls/1/engageReverse'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe --request POST --include --url "localhost:4004/odata/v4/morse/Controls/1/engageReverse"
+```
+
+```cmd
+curl --request POST --include --url "localhost:4004/odata/v4/morse/Controls/1/engageReverse"
+```
+
+</details>
 
 Excellent - we are prevented from damaging the engine gearbox:
 

@@ -18,6 +18,27 @@ rm -rf proj-01 \
   && tree
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+Remove-Item -Recurse -Force proj-01 -ErrorAction SilentlyContinue
+Copy-Item -Recurse baseproj proj-01
+Set-Location proj-01
+tree /F
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+rmdir /s /q proj-01 2>nul & xcopy baseproj proj-01 /e /i /q & cd proj-01 & tree /f
+```
+
+</details>
+
 This should emit something like this:
 
 ```log
@@ -34,6 +55,11 @@ This should emit something like this:
 
 4 directories, 6 files
 ```
+
+> On Windows, the built-in `tree /F` command produces box-drawing output in a
+> different style and does not print a trailing "N directories, M files" summary
+> line. The structure (the same 4 directories and 6 files) will match, even
+> though the exact rendering differs from the Unix `tree` output shown above.
 
 ## Explore the service
 
@@ -70,6 +96,17 @@ for each of the three entities):
 > ```
 >
 > specifying the exercise number (1) as the only argument.
+>
+> On Windows, use the equivalent utility for your shell instead — both take the
+> exercise number the same way:
+>
+> ```powershell
+> .\utils\showurls.ps1 1
+> ```
+>
+> ```cmd
+> utils\showurls.cmd 1
+> ```
 
 👉 Once you've done exploring, stop the CAP server (with `Ctrl-C`).
 
@@ -171,6 +208,27 @@ to see some extra output relating to the 'basic' strategy we're using:
 DEBUG=basic cds watch
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+PowerShell doesn't support the inline `VAR=value command` syntax; set the
+environment variable first, then run the command:
+
+```powershell
+$env:DEBUG='basic'; cds watch
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+set DEBUG=basic && cds watch
+```
+
+</details>
+
 With non-productive auth strategies, automatic authentication of all endpoints
 is disabled[<sup>3</sup>](#footnotes). This is why we can access resources
 served by the CAP server without any authentication information in the request.
@@ -180,6 +238,51 @@ served by the CAP server without any authentication information in the request.
 ```bash
 curl -i 'localhost:4004/northwhisper/Categories?$top=1'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+The `curl` commands throughout this exercise need some adjustments on Windows —
+apply the same pattern to every `curl` command that follows. The tricky part is
+quoting the `$` in `$top` (and other `$...` query options), and the correct
+approach differs by shell:
+
+- **PowerShell** treats `$top` inside double quotes as a variable, so double
+  quotes would turn `?$top=1` into `?=1` (a `400` "Parsing URL failed" error).
+  Use **single quotes** around the URL instead. Also call `curl.exe`, because
+  plain `curl` is an alias for `Invoke-WebRequest`, which takes different
+  options.
+- **cmd** doesn't support single-quoted arguments, but it also doesn't treat
+  `$` specially — so use **double quotes**. Plain `curl` is fine in cmd.
+
+PowerShell (single quotes, `curl.exe`):
+
+```powershell
+curl.exe -i 'localhost:4004/northwhisper/Categories?$top=1'
+```
+
+cmd (double quotes):
+
+```cmd
+curl -i "localhost:4004/northwhisper/Categories?$top=1"
+```
+
+A Windows equivalent is given under each `curl` command in this exercise. Where
+a command spans multiple lines, replace the bash line-continuation `\` with a
+backtick `` ` `` in PowerShell or a caret `^` in cmd (or put it on one line).
+
+Where a command sends a JSON `--data` payload, the quoting differs by shell:
+
+- **PowerShell 7+**: wrap the JSON in single quotes with no escaping, e.g.
+  `--data '{"UnitPrice":100}'`.
+- **cmd**: wrap in double quotes and double the inner quotes, e.g.
+  `--data "{""UnitPrice"":100}"`.
+- **Windows PowerShell 5.1** (the version bundled with Windows) mangles inline
+  double quotes passed to native programs, so neither reliably works there. If
+  you're on 5.1, either upgrade to PowerShell 7+, or put the JSON in a file and
+  use curl's `--data '@payload.json'` form.
+
+</details>
 
 This should return data successfully, with something like[<sup>4</sup>](#footnotes):
 
@@ -237,6 +340,19 @@ we're using the 'basic' strategy here), we should retry access to the
 curl -i 'localhost:4004/northwhisper/Categories?$top=1'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe -i 'localhost:4004/northwhisper/Categories?$top=1'
+```
+
+```cmd
+curl -i "localhost:4004/northwhisper/Categories?$top=1"
+```
+
+</details>
+
 This time, we get an appropriate HTTP response:
 
 ```log
@@ -275,6 +391,19 @@ one[<sup>5</sup>](#footnotes).
 ```bash
 curl -u alan: -i 'localhost:4004/northwhisper/Categories?$top=1'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe -u alan: -i 'localhost:4004/northwhisper/Categories?$top=1'
+```
+
+```cmd
+curl -u alan: -i "localhost:4004/northwhisper/Categories?$top=1"
+```
+
+</details>
 
 Authenticating as `alan` does the trick:
 
@@ -341,6 +470,19 @@ Write access to the `Products` entity is now further locked down.
 curl -u alan: -i 'localhost:4004/northwhisper/Products?$top=1'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe -u alan: -i 'localhost:4004/northwhisper/Products?$top=1'
+```
+
+```cmd
+curl -u alan: -i "localhost:4004/northwhisper/Products?$top=1"
+```
+
+</details>
+
 Oh!
 
 ```log
@@ -394,6 +536,19 @@ Let's have another go at reading products as `alan`:
 curl -u alan: -i 'localhost:4004/northwhisper/Products?$top=1'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+curl.exe -u alan: -i 'localhost:4004/northwhisper/Products?$top=1'
+```
+
+```cmd
+curl -u alan: -i "localhost:4004/northwhisper/Products?$top=1"
+```
+
+</details>
+
 Success!
 
 ```log
@@ -425,6 +580,23 @@ Now let's check write access, given that privilege on `Products`.
    --include \
    --url 'localhost:4004/northwhisper/Products/1'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+PowerShell (single-quoted JSON, no escaping — needs PowerShell 7+):
+
+```powershell
+curl.exe -u alan: --request PATCH --header "Content-Type: application/json" --data '{"UnitPrice":100}' --include --url "localhost:4004/northwhisper/Products/1"
+```
+
+cmd (JSON inner quotes doubled as `""`):
+
+```cmd
+curl -u alan: --request PATCH --header "Content-Type: application/json" --data "{""UnitPrice"":100}" --include --url "localhost:4004/northwhisper/Products/1"
+```
+
+</details>
 
 Uh-oh!
 
@@ -463,6 +635,23 @@ cds.requires.auth.users.alan.roles=["admin","finance"]
    --include \
    --url 'localhost:4004/northwhisper/Products/1'
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+PowerShell (single-quoted JSON, no escaping — needs PowerShell 7+):
+
+```powershell
+curl.exe -u alan: --request PATCH --header "Content-Type: application/json" --data '{"UnitPrice":100}' --include --url "localhost:4004/northwhisper/Products/1"
+```
+
+cmd (JSON inner quotes doubled as `""`):
+
+```cmd
+curl -u alan: --request PATCH --header "Content-Type: application/json" --data "{""UnitPrice"":100}" --include --url "localhost:4004/northwhisper/Products/1"
+```
+
+</details>
 
 This time, we are successful!
 
