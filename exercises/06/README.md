@@ -39,6 +39,25 @@ directories that are also created but which we don't need):
 cds add nodejs && rmdir app/ srv/ db/
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+`cds add nodejs` is the same; only the directory removal differs.
+
+PowerShell:
+
+```powershell
+cds add nodejs; Remove-Item -Recurse -Force app, srv, db
+```
+
+cmd:
+
+```cmd
+cds add nodejs && rmdir /s /q app srv db
+```
+
+</details>
+
 👉 Install the `@cap-js/cds-test` package as a dev dependency:
 
 ```bash
@@ -64,6 +83,25 @@ The resulting `package.json` should look something like this:
   "private": true
 }
 ```
+
+> [!NOTE]
+> On a CDS 10+ project the generated `package.json` differs in a few ways worth
+> keeping in mind here:
+>
+> - `@sap/cds` is pinned to `^10` and `@cap-js/sqlite` to `^3` (the v3 SQLite
+>   driver uses Node.js' built-in `node:sqlite`, so there's no native
+>   `better-sqlite3` to compile).
+> - `cds init` sets `"type": "module"`, which makes Node.js treat `.js` files as
+>   ES modules.
+>
+> That last point affects the **test file** we're about to write. The
+> `test/transitions.test.js` shown later uses CommonJS (`const cds =
+> require('@sap/cds')`). On a `"type": "module"` project that `require` throws
+> `ReferenceError: require is not defined in ES module scope`, so you'd either
+> name the file `transitions.test.cjs`, or keep `.js` and write it as an ES
+> module — replacing `const cds = require('@sap/cds')` with `import cds from
+> '@sap/cds'`. The `describe`/`it`/`expect` calls themselves are unchanged. This
+> exercise targets v9, so the CommonJS test file is correct as written.
 
 ## Explore testing in the cds REPL
 
@@ -313,6 +351,26 @@ describe('Initial controls', () => {
 
 })
 ```
+
+> [!NOTE]
+> On a CDS 10+ project (where `"type": "module"` is set), write this as an ES
+> module instead — only the first line changes, from `require` to `import`:
+>
+> ```javascript
+> import cds from '@sap/cds'
+> const { GET, POST, defaults, expect } = cds.test('.')
+> defaults.path = '/odata/v4/morse'
+>
+> describe('Initial controls', () => {
+>
+> })
+> ```
+>
+> Everything else in the file — `cds.test('.')`, `defaults.path`, and the
+> `describe`/`it`/`expect` calls added throughout the rest of this exercise —
+> stays exactly the same. `cds test` discovers and runs `*.test.js` files the
+> same way whether they're CommonJS or ES modules. (This exercise targets v9, so
+> the CommonJS version above is correct as written.)
 
 This is a simple harness for our tests.
 
