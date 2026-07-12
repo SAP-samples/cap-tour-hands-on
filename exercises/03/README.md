@@ -190,6 +190,9 @@ on this in [02 - Mocking messaging](../02/README.md)).
 > the plugin mechanics. It should replace country values with the corresponding
 > flag emojis, for elements that have been marked with a `@flagify` annotation.
 > An essential enterprise feature, I'm sure you'll agree!
+>
+> By the way, if you're running Windows, note that you'll have to use Firefox if
+> you want the emojis to render properly.
 
 ### Create the plugin package directory
 
