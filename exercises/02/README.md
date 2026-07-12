@@ -26,6 +26,26 @@ rm -rf proj-02 \
   && cd $_
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+Remove-Item -Recurse -Force proj-02 -ErrorAction SilentlyContinue
+New-Item -ItemType Directory proj-02 | Out-Null
+Set-Location proj-02
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+rmdir /s /q proj-02 2>nul & mkdir proj-02 & cd proj-02
+```
+
+</details>
+
 👉 Now in this directory, create a `package.json` file containing:
 
 ```json
@@ -101,6 +121,40 @@ and the contents of its `package.json` file are what we need:
 }
 ```
 
+> [!NOTE]
+> On CDS 10 and higher, `cds init` generates a `package.json` that pins the newer
+> major versions and, crucially, sets `"type": "module"` — which is what makes
+> Node.js treat `.js` files as ES modules (see the note about `main.cjs` further
+> down). It looks like this:
+>
+> ```json
+> {
+>   "name": "emitter",
+>   "version": "1.0.0",
+>   "type": "module",
+>   "dependencies": {
+>     "@sap/cds": "^10"
+>   },
+>   "devDependencies": {
+>     "@cap-js/sqlite": "^3"
+>   },
+>   "scripts": {
+>     "start": "cds-serve"
+>   },
+>   "private": true,
+>   "cds": {
+>     "requires": {
+>       "messaging": {
+>         "kind": "file-based-messaging"
+>       }
+>     }
+>   }
+> }
+> ```
+>
+> The `"type": "module"` line is the key difference — it's why a CommonJS handler
+> on CDS 10+ has to be named `main.cjs` rather than `main.js`.
+
 ### Add an emitter trigger and event
 
 Continuing on the theme of keeping things simple, let's now flesh out this
@@ -143,6 +197,75 @@ module.exports = cds.service.impl(async function() {
 })
 ```
 
+> [!NOTE]
+> This handler is written in CommonJS style (`require` and `module.exports`). On
+> CDS 10 and higher, new projects default to ECMAScript Modules — `cds init`
+> sets `"type": "module"` in `package.json`, which makes Node.js treat `.js`
+> files as ES modules. In that case, you have two choices: name this file
+> `main.cjs` (not `main.js`) so Node.js still loads it as CommonJS, or keep the
+> `.js` extension and rewrite it using ESM syntax.
+>
+> Here's the same handler written as an ES module (`emitter/srv/main.js` on a
+> CDS 10+ project). Two things change: `require('@sap/cds')` becomes a default
+> `import`, and `module.exports = ...` becomes `export default ...`. The handler
+> body is identical:
+>
+> ```javascript
+> import cds from '@sap/cds'
+> const log = cds.log('emitter')
+>
+> export default cds.service.impl(async function() {
+>   this.on('greet', async (req) => {
+>     const emitter = await cds.connect.to('codejam.emitter.EmitterService')
+>     log(`emitting Greeting.Received (${req.data.greeting})`)
+>     await emitter.emit('Greeting.Received', { info: req.data.greeting })
+>     return 'OK'
+>   })
+> })
+> ```
+>
+> **What's actually happening here, and why:** Node.js decides how to interpret a
+> `.js` file from the nearest `package.json`. If that file has no `"type"` field
+> (or `"type": "commonjs"`), `.js` files are loaded as **CommonJS** — the module
+> system that provides `require()` and `module.exports`, which is what the
+> original code above uses. If `"type": "module"` is set, Node.js instead loads
+> `.js` files as **ES modules**, where `require` and `module.exports` don't
+> exist; using them throws `ReferenceError: require is not defined in ES module
+> scope`. That's why, on a CDS 10+ project, you either switch to the ESM syntax
+> shown above or rename the file to `.cjs`.
+>
+> The file **extension** is the explicit override that ignores the `"type"`
+> setting: `.cjs` always means CommonJS, and `.mjs` always means ES module. So on
+> a CDS 10+ project (where `"type": "module"` is the default), renaming this file
+> to `main.cjs` tells Node.js "load this one as CommonJS regardless of the
+> project default", which is exactly what the `require`/`module.exports` version
+> needs. CAP discovers handler files by base name next to the `.cds` service
+> definition, so `main.js` and `main.cjs` are found the same way — only the
+> module interpretation changes.
+>
+> This exercise targets `@sap/cds` v9 (see the `package.json` above — no
+> `"type": "module"`), so the CommonJS `main.js` is correct as written here. The
+> ESM/`.cjs` alternatives matter when you build the same thing on a CDS 10+
+> project.
+>
+> **If you switch this handler to ESM, you must run `npm install` in the project
+> before starting the emitter.** With the CommonJS version, `cds watch emitter`
+> starts even with no local `node_modules`, because CommonJS's module resolver
+> falls back to the `@sap/cds` bundled inside the globally installed
+> `@sap/cds-dk` that runs the command. Node.js's ESM resolver is stricter: an
+> `import` does **not** fall back to the global toolkit, so with no local
+> install you'll get:
+>
+> ```log
+> Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@sap/cds' imported from .../emitter/srv/main.js
+> ```
+>
+> Running `npm install` at the workspace root (which happens later in this
+> exercise anyway, in [Wire things up at the workspace
+> level](#wire-things-up-at-the-workspace-level)) puts `@sap/cds` into
+> `node_modules` so the `import` resolves. So if you're going all-in on ESM,
+> just do that `npm install` step first, before trying out the emitter.
+
 Here's a quick summary of what this does:
 
 - loads the CDS facade
@@ -180,6 +303,26 @@ superfluous here, so for neatness and clarity, let's remove what we don't need.
 rm -rf emitter/{.gitignore,.vscode/,app/,db/,readme.md}
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+The `{...}` brace expansion is a bash feature; list the paths explicitly
+instead.
+
+PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force emitter/.gitignore, emitter/.vscode, emitter/app, emitter/db, emitter/readme.md -ErrorAction SilentlyContinue
+```
+
+cmd:
+
+```cmd
+del /q emitter\.gitignore emitter\readme.md 2>nul & rmdir /s /q emitter\.vscode emitter\app emitter\db 2>nul
+```
+
+</details>
+
 ### Try out the emitter
 
 Great - at this point, we're all set with our emitter. We should try it out,
@@ -194,6 +337,26 @@ receiver on that port instead.
 ```cds
 PORT=4006 cds watch emitter
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+Windows shells don't support the inline `VAR=value command` syntax; set the
+environment variable first.
+
+PowerShell:
+
+```powershell
+$env:PORT=4006; cds watch emitter
+```
+
+cmd:
+
+```cmd
+set PORT=4006 && cds watch emitter
+```
+
+</details>
 
 > If you see an error on startup like this:
 >
@@ -245,6 +408,32 @@ curl \
   --url 'localhost:4006/rest/emitter/greet'
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+On Windows, put the whole command on one line (or use the line-continuation
+character for your shell — a backtick `` ` `` in PowerShell, a caret `^` in
+cmd), and mind the quoting of the JSON payload. In PowerShell also call
+`curl.exe`, because `curl` is an alias for `Invoke-WebRequest`.
+
+PowerShell 7+ (single-quoted JSON, no escaping):
+
+```powershell
+curl.exe --header "Content-Type: application/json" --data '{"greeting": "Mock all the things!"}' --url "localhost:4006/rest/emitter/greet"
+```
+
+cmd (inner double quotes doubled as `""`):
+
+```cmd
+curl --header "Content-Type: application/json" --data "{""greeting"": ""Mock all the things!""}" --url "localhost:4006/rest/emitter/greet"
+```
+
+> Windows PowerShell 5.1 (the version bundled with Windows) mangles inline
+> double quotes passed to native programs, so the PowerShell line above needs
+> PowerShell 7+. On 5.1, put the JSON in a file and use `--data '@greeting.json'`.
+
+</details>
+
 In the log output of the emitter server, we see:
 
 ```log
@@ -266,6 +455,27 @@ there, tells us this is design-time only, and not for production.
 ```bash
 cat ~/.cds-msg-box
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+`~` and the `.cds-msg-box` filename resolve the same way, but the command to
+print a file differs. This applies to both places in this exercise where the
+message box is inspected.
+
+PowerShell:
+
+```powershell
+Get-Content ~/.cds-msg-box
+```
+
+cmd:
+
+```cmd
+type "%USERPROFILE%\.cds-msg-box"
+```
+
+</details>
 
 There should be a record in there that represents the message that was just
 emitted, and looks something like this (formatted for easier reading):
@@ -307,6 +517,23 @@ As before, we only really need the `package.json` file.
 rm -rf receiver/{.gitignore,.vscode/,app/,db/,srv/,readme.md}
 ```
 
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force receiver/.gitignore, receiver/.vscode, receiver/app, receiver/db, receiver/srv, receiver/readme.md -ErrorAction SilentlyContinue
+```
+
+cmd:
+
+```cmd
+del /q receiver\.gitignore receiver\readme.md 2>nul & rmdir /s /q receiver\.vscode receiver\app receiver\db receiver\srv 2>nul
+```
+
+</details>
+
 ### Add a custom server implementation
 
 All we really want to do here is have this receiver consume the events when it
@@ -328,6 +555,34 @@ cds.once('served', async () => {
   })
 })
 ```
+
+> [!NOTE]
+> Like `emitter/srv/main.js`, this is a CommonJS file (`require`). On a CDS 10+
+> project — where `cds init` sets `"type": "module"` and Node.js therefore treats
+> `.js` as ES modules — you can either name this file `server.cjs` so Node.js
+> loads it as CommonJS, or keep the `.js` extension and rewrite it as an ES
+> module. (See the fuller explanation next to the emitter's `main.js` above,
+> including the reminder to run `npm install` first when going all-in on ESM.)
+>
+> Here's the ESM version (`receiver/server.js` on a CDS 10+ project). This file
+> has no `module.exports` to convert — it just runs code at load time — so the
+> only change is `require('@sap/cds')` becoming a default `import`:
+>
+> ```javascript
+> import cds from '@sap/cds'
+> const log = cds.log('receiver')
+> const eventID = 'Greeting.Received'
+>
+> cds.once('served', async () => {
+>   log(`Setting up listener for ${eventID}`)
+>   const EmitterService = await cds.connect.to('EmitterService')
+>   EmitterService.on(eventID, (msg) => {
+>     log('received:', msg.event, msg.data)
+>   })
+> })
+> ```
+>
+> On this exercise's v9 project, the CommonJS `server.js` above is correct as-is.
 
 We can view this as the flip side of `emitter/srv/main.js`, as it:
 
@@ -402,6 +657,29 @@ symbolic links):
 ```bash
 tree -L 2 -l
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+The built-in Windows `tree` command has no equivalent of `-L` (depth limit) or
+`-l` (follow/show symbolic links), so the output won't match exactly. `tree /F`
+will still show the `emitter` and `receiver` entries under `node_modules`, but
+renders them as ordinary directories rather than annotating them as links. To
+confirm they really are links (junctions) to the local packages, use:
+
+PowerShell:
+
+```powershell
+Get-ChildItem node_modules -Force | Where-Object LinkType | Select-Object Name, LinkType, Target
+```
+
+cmd (junctions show as `<JUNCTION>` with their target):
+
+```cmd
+dir /a:l node_modules
+```
+
+</details>
 
 Here's what you should see (with much of the output removed, for brevity):
 
@@ -491,6 +769,19 @@ What is in `~/.cds-msg-box` now?
 ```bash
 cat ~/.cds-msg-box
 ```
+
+<details>
+<summary>Windows (PowerShell / cmd)</summary>
+
+```powershell
+Get-Content ~/.cds-msg-box
+```
+
+```cmd
+type "%USERPROFILE%\.cds-msg-box"
+```
+
+</details>
 
 Nothing! The event record has gone. As we'd hoped and expected.
 
