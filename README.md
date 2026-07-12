@@ -104,6 +104,20 @@ see the [prerequisites](prerequisites/README.md) for more info.
 
     In this exercise we'll explore what that is, and how it works.
 
+## Utilities
+
+The [utils/](utils/) directory contains a small `showurls` helper that emits
+the `http://localhost:4004...` URLs found in a given exercise's README, which
+is handy in GitHub Codespaces where `localhost` addresses are auto-exposed with
+custom domain names. Use the variant that matches your shell, passing the
+exercise number as the argument:
+
+- macOS / Linux / Codespaces: `./utils/showurls 1`
+- Windows (PowerShell): `.\utils\showurls.ps1 1`
+- Windows (cmd): `utils\showurls.cmd 1`
+
+All three produce identical output.
+
 ## Support
 
 Support for the content in this repository is available during the actual time
