@@ -284,7 +284,7 @@ Where a command sends a JSON `--data` payload, the quoting differs by shell:
 
 </details>
 
-This should return data successfully, with something like[<sup>4</sup>](#footnotes):
+This should return data successfully, with something like:
 
 ```log
 HTTP/1.1 200 OK
@@ -300,6 +300,27 @@ HTTP/1.1 200 OK
   ]
 }
 ```
+
+> Here the JSON is presented in a pretty-printed way, for easier reading. The
+> actual mechanism to do this is left off the invocation that produced this
+> output, again, to keep things clean and legible. This approach is used
+> throughout all the exercises in this CodeJam. If you want to have the JSON
+> formatted like this, you'll need to do two things:
+>
+> - in circumstances where non-JSON output is also produced, like the status
+>   code line in this example, you'll have to suppress it; here, you'd need to
+>   omit the `-i` option that was used in the `curl` invocation to include the
+>   HTTP response status code and headers
+> - then you'd need to send the remaining JSON output to something like `jq`
+>   invoked with the identity function `.` (and if you don't supply any filter
+>   then the identity filter will be assumed), like this:
+>
+>    ```bash
+>    curl 'localhost:4004/northwhisper/Categories?$top=1' | jq .
+>    ```
+>
+>   Working out the Windows equivalent is left as an exercise for you, dear
+>   reader.
 
 ## Restrict access to the service
 
@@ -384,7 +405,7 @@ password like this:
 
 If we keep the joining colon (`:`) but leave off any password, we can
 effectively specify no password and not have `curl` prompt us for
-one[<sup>5</sup>](#footnotes).
+one[<sup>4</sup>](#footnotes).
 
 👉 Try that now:
 
@@ -700,8 +721,6 @@ HTTP/1.1 200 OK
 
 1. See the `restrict_all_services` flag within `requires.auth` for further
    details and the blog post [CAP service authentication at design time and in production](https://qmacro.org/blog/posts/2026/06/19/cap-service-authentication-at-design-time-and-in-production/)
-
-1. Any JSON structures in responses are formatted for easier reading.
 
 1. If we don't use the `:` then `curl` will prompt for a password, like this:
 
