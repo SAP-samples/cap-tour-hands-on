@@ -59,7 +59,7 @@ cds repl
 and you'll be presented with a simple prompt:
 
 ```text
-Welcome to cds repl v9.9.1
+Welcome to cds repl v10.0.3
 >
 ```
 
@@ -262,7 +262,7 @@ instead of the default 4004):
   decl: 'srv/main.cds:4'
 }
 [cds] - server listening on { url: 'http://localhost:40625' }
-[cds] - server v9.9.1 launched in 872550 ms
+[cds] - server v10.0.3 launched in 872550 ms
 [cds] - [ terminate with ^C ]
 ```
 

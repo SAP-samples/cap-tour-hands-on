@@ -117,7 +117,7 @@ whereupon we should only see the simple prompt, as we didn't request
 a CAP server to be started (with `--run`):
 
 ```log
-Welcome to cds repl v9.9.1
+Welcome to cds repl v10.0.3
 >
 ```
 
@@ -162,7 +162,7 @@ Test {}
   decl: 'services.cds:15'
 }
 [cds] - server listening on { url: 'http://localhost:45167' }
-[cds] - server v9.9.1 launched in 13275 ms
+[cds] - server v10.0.3 launched in 13275 ms
 [cds] - [ terminate with ^C ]
 ```
 
@@ -448,7 +448,7 @@ We see something like this:
   decl: 'services.cds:15'
 }
 [cds] - server listening on { url: 'http://localhost:45211' }
-[cds] - server v9.9.1 launched in 640 ms
+[cds] - server v10.0.3 launched in 640 ms
 
  0.720s
 
@@ -511,7 +511,7 @@ We get output like this:
   decl: 'services.cds:15'
 }
 [cds] - server listening on { url: 'http://localhost:37143' }
-[cds] - server v9.9.1 launched in 4332 ms
+[cds] - server v10.0.3 launched in 4332 ms
 [odata] - GET /odata/v4/morse/Controls
 
   Initial controls

@@ -108,7 +108,7 @@ Some interesting output appears in the server log, like this:
 
 ...
 [cds] - server listening on { url: 'http://localhost:4004' }
-[cds] - server v9.9.1 launched in 286 ms
+[cds] - server v10.0.3 launched in 286 ms
 ```
 
 We can see there are two plugins being fetched and loaded:
@@ -146,7 +146,7 @@ You should see something like this:
 
 ```log
 node ➜ /workspaces/cap-tour-hands-on/proj-03/ (main) $ cds repl
-Welcome to cds repl v9.9.1
+Welcome to cds repl v10.0.3
 > cds.home
 /workspaces/cap-tour-hands-on/proj-03/node_modules/@sap/cds
 > cds.root

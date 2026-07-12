@@ -389,7 +389,7 @@ We see log output like this, as expected:
   impl: 'emitter/srv/main.js'
 }
 [cds] - server listening on { url: 'http://localhost:4006' }
-[cds] - server v9.9.1 launched in 279 ms
+[cds] - server v10.0.3 launched in 279 ms
 [cds] - [ terminate with ^C ]
 ```
 
