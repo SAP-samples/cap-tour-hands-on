@@ -46,6 +46,112 @@ EOSERVICE
 
 }
 
+ex02() {
+
+  echo "02 - Mocking messaging"
+
+  rm -rf proj-02 \
+    && mkdir proj-02 \
+    && cd "$_"
+
+  cat << EOPACKAGEJSON > package.json
+{
+  "name": "messaging",
+  "workspaces": [
+    "*"
+  ]
+}
+EOPACKAGEJSON
+
+  # emitter
+
+  cds init emitter --add nodejs,file-based-messaging
+
+  cat << EOMAINCDS > emitter/srv/main.cds
+namespace codejam.emitter;
+
+@rest
+service EmitterService {
+  action greet(greeting: String) returns String;
+
+  event Greeting.Received {
+    info : String;
+  }
+}
+EOMAINCDS
+
+  cp "../$HERE/02/assets/emitter/srv/main.js" emitter/srv/
+  cp "../$HERE/02/assets/emitter/index.cds" emitter/
+
+  rm -rf emitter/{.gitignore,.vscode/,app/,db/,readme.md}
+
+  # temp fix for cds 10 / ESM until 10.0.5
+  sed --in-place 's/"type"/"_type"/' emitter/package.json
+
+  # receiver
+
+  cds init receiver --add nodejs,file-based-messaging
+  rm -rf receiver/{.gitignore,.vscode/,app/,db/,srv/,readme.md}
+  cp "../$HERE/02/assets/receiver/server.js" receiver/
+
+  jq '.cds.requires["EmitterService"] = { service: "codejam.emitter.EmitterService", model: "emitter" }' receiver/package.json > /tmp/package.json \
+    && cp /tmp/package.json receiver/
+
+  # temp fix for cds 10 / ESM until 10.0.5
+  sed --in-place 's/"type"/"_type"/' receiver/package.json
+
+}
+
+ex05() {
+
+  echo "05 - Exploring status-transition flows"
+
+  rm -rf proj-05 \
+    && mkdir proj-05 \
+    && cd "$_"
+
+  cat << EOSERVICES > services.cds
+context codejam {
+
+  type Position : String enum {
+    Forward;
+    Neutral;
+    Reverse;
+  }
+
+  entity Controls {
+    key ID       : Integer;
+        position : Position default #Neutral;
+  }
+}
+
+service Morse {
+
+  entity Controls as projection on codejam.Controls
+
+    actions {
+      action engageForward();
+      action engageNeutral();
+      action engageReverse();
+    };
+
+}
+EOSERVICES
+
+  cat << EOANNOTATIONS >> services.cds
+
+annotate Morse.Controls with @flow.status: position actions {
+  engageForward  @from: #Neutral  @to: #Forward;
+  engageNeutral  @from: [
+    #Forward,
+    #Reverse
+  ]                               @to: #Neutral;
+  engageReverse  @from: #Neutral  @to: #Reverse;
+};
+EOANNOTATIONS
+
+}
+
 ex08() {
 
   echo "08 - Discovering API client package export and reuse"
