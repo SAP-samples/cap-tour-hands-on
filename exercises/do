@@ -151,6 +151,15 @@ EOFLAGSJSON
 
 }
 
+ex04() {
+
+  echo "04 - Using the REPL"
+
+  rm -rf proj-04 \
+    && cp -a baseproj proj-04 \
+    && cd "$_"
+}
+
 ex05() {
 
   echo "05 - Exploring status-transition flows"
