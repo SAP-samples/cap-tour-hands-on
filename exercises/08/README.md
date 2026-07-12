@@ -320,7 +320,7 @@ Exporting APIs to apis/productsummary ...
   changed earlier from `baseproj` to `northwhisper`) and the name of the
   service upon which this API client package export was based
 - there's a `services.csn` file, which is the machine readable (CSN) version of
-  the service defined in `srv/producsummary.cds`
+  the service defined in `srv/productsummary.cds`
 - there's also a `data/` directory with a single CSV file representing the
   dataset defined by the `ProductData` projection
 
