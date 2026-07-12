@@ -9,6 +9,9 @@ For this, you have a few options.
 You can follow the [Getting Started](https://cap.cloud.sap/docs/get-started/)
 guide in Capire (CAP's official documentation).
 
+> If you go for this option, you'll also need to install
+> [jq](https://jqlang.org/) and also `tree` (or use an equivalent).
+
 You can clone and open this repository in a locally running VS Code where
 you've installed the [Dev
 Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
