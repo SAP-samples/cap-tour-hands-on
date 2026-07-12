@@ -364,10 +364,10 @@ will just emit:
 ```
 
 > [!NOTE]
-> On CDS 10 and higher this situation is improved — the cds REPL expands
+> On cds 10 and higher this situation is improved — the cds REPL expands
 > `LinkedDefinitions` for you, so typing `Main.entities` there will already show
 > the entities (much like the `.inspect` output below) rather than the terse
-> `[object Function]`. So if you're on CDS 10+, your output here may not match
+> `[object Function]`. So if you're on cds 10+, your output here may not match
 > what's shown — that's expected, and a welcome improvement.
 
 Instead, we can use `.inspect`.
