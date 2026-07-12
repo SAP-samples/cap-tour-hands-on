@@ -438,6 +438,28 @@ using from 'northwhisper-productsummary';
 
 To get started, that's all we need!
 
+> [!NOTE]
+> It's worth pausing at this point to note that what we have not had to do is
+> define a `package.json#cds.requires.<srv>.model` stanza to bring this external
+> model to the project's attention. Such a stanza might have looked like this:
+>
+> ```javascript
+> {
+>   "cds": {
+>     "requires": {
+>       "northwhisper-productsummary": {
+>         "kind": "hcql",
+>         "model": "northwhisper-productsummary"
+>       }
+>     }
+>   }
+> }
+> ```
+>
+> This sort of thing was really only for where imported models weren't used in
+> mashups, i.e. not included with a `using` directive, but instead accessed
+> only via programmatic calls in implementation handlers.
+
 ### Compile what we have
 
 Sometimes, a convenient way for us to check and confirm what we're dealing with
