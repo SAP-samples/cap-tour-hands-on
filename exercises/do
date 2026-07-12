@@ -100,6 +100,8 @@ EOMAINCDS
   # temp fix for cds 10 / ESM until 10.0.5
   sed --in-place 's/"type"/"_type"/' receiver/package.json
 
+  npm install
+
 }
 
 ex05() {
