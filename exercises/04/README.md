@@ -22,6 +22,26 @@ rm -rf proj-04 \
   && cd $_
 ```
 
+<details>
+<summary>Windows (PowerShell)</summary>
+
+```powershell
+Remove-Item -Recurse -Force proj-04 -ErrorAction SilentlyContinue
+Copy-Item -Recurse baseproj proj-04
+Set-Location proj-04
+```
+
+</details>
+
+<details>
+<summary>Windows (cmd)</summary>
+
+```cmd
+rmdir /s /q proj-04 2>nul & xcopy baseproj proj-04 /e /i /q & cd proj-04
+```
+
+</details>
+
 We should by now be familiar with the contents of this project, a very reduced
 version of Northwind, with just products, suppliers and categories (each of
 which have just a few fields) exposed in a single service.
@@ -342,6 +362,13 @@ will just emit:
 ```javascript
 [object Function]
 ```
+
+> [!NOTE]
+> On CDS 10 and higher this situation is improved — the cds REPL expands
+> `LinkedDefinitions` for you, so typing `Main.entities` there will already show
+> the entities (much like the `.inspect` output below) rather than the terse
+> `[object Function]`. So if you're on CDS 10+, your output here may not match
+> what's shown — that's expected, and a welcome improvement.
 
 Instead, we can use `.inspect`.
 
