@@ -438,9 +438,68 @@ using from 'northwhisper-productsummary';
 
 To get started, that's all we need!
 
+### Compile what we have
+
+Sometimes, a convenient way for us to check and confirm what we're dealing with
+is to simply ask the CDS compiler.
+
+> If you're working in some incarnation of VS Code[<sup>4</sup>](#footnotes)
+> where the CDS Language Support extension is installed, then you can do this
+> easily with the "show as YAML/CSN ..." facility.
+
+👉 Let's do that now:
+
+```bash
+cds compile .
+```
+
+Bootstrapped from the simple, single `using` line, we get this:
+
+```javascript
+{
+  definitions: {
+    ProductSummary: {
+      kind: 'service',
+      '@source': 'srv/productsummary.cds',
+      '@hcql': true,
+      '@odata': true,
+      '@cds.external': 2
+    },
+    'ProductSummary.ProductData': {
+      kind: 'entity',
+      '@readonly': true,
+      elements: {
+        ID: {
+          key: true,
+          type: 'cds.Integer'
+        },
+        name: {
+          type: 'cds.String'
+        },
+        category: {
+          '@Core.Computed': true,
+          type: 'cds.String'
+        },
+        supplier: {
+          type: 'cds.String'
+        }
+      }
+    }
+  },
+  meta: {
+    creator: 'CDS Compiler v7.0.1',
+    compilerCsnFlavor: 'inferred',
+    flavor: 'inferred'
+  },
+  '$version': '2.0'
+}
+```
+
+That's a great sign. But we can investigate further in the cds REPL.
+
 ### Start a cds REPL for the consumer project
 
-To prove that, let's dive into a cds REPL session.
+So let's dive in.
 
 👉 Start a cds REPL session (still in the `consumer/` directory), specifying
 the `--run` option to have a CAP server started for the current (minimal!)
@@ -449,6 +508,8 @@ project:
 ```bash
 cds repl --run .
 ```
+
+#### Examine the server output
 
 Goodness, what beautiful output!
 
@@ -489,7 +550,142 @@ from cds.services: {
 Simply type e.g. ProductSummary in the prompt to use the respective objects.
 ```
 
-TO-BE-CONTINUED
+👉 Let's take a moment to learn from what we observe here.
+
+- The `using` directive does its job perfectly, bringing in the definitions
+  from our API client package, as we can see from the 3 files listed in the
+  "loaded models from 3 file(s)" message
+- The sample data from within the API client package is also loaded and
+  deployed to the in-memory SQLite database
+- The CAP server recognises the `northwisper-productsummary` as a "non-local"
+  service (which has no external bindings, nothing in `~/.cds-services.json`)
+  and mocks it for us
+- In doing so, the protocol annotations in the imported package definition
+  (`@hcql` and `@odata`) are honoured
+
+and
+
+- We have access directly to the `ProductSummary` service in one of the cds
+  REPL run-based convenience variables
+
+so let's make good use of it!
+
+#### Explore what is on offer
+
+👉 At the cds REPL prompt, start with:
+
+```javascript
+ProductSummary
+```
+
+We see everything that is part of the `cds export`-ed API client package, laid
+out bare for us in all its glory (and gory detail):
+
+```javascript
+ApplicationService {
+  handlers: [EventHandlers],
+  name: 'ProductSummary',
+  options: [Object],
+  kind: 'app-service',
+  model: [LinkedCSN],
+  definition: [service],
+  namespace: 'ProductSummary',
+  actions: LinkedDefinitions {},
+  entities: [LinkedDefinitions],
+  _source: '/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-08/node_modules/@sap/cds/srv/app-service.js',
+  handle_authorization: [AsyncFunction: handle_authorization],
+  handle_etags: [AsyncFunction: handle_etags],
+  handle_validations: [Function: handle_validations],
+  handle_media_type: [Function (anonymous)],
+  handle_temporal_data: undefined,
+  handle_paging: [Function: handle_paging],
+  handle_sorting: [Function: handle_sorting],
+  mocked: true,
+  endpoints: [Array],
+  _adapters: [Object],
+  path: '/odata/v4/product-summary',
+  '$linkProviders': [Array]
+}
+```
+
+👉 Examine the content of the entities property:
+
+```javascript
+ProductSummary.entities
+```
+
+whereupon we're presented with:
+
+```javascript
+LinkedDefinitions {
+  ProductData: entity {
+    kind: 'entity',
+    '@readonly': true,
+    elements: LinkedDefinitions {
+      ID: Integer { key: true, type: 'cds.Integer' },
+      name: String { type: 'cds.String' },
+      category: String { '@Core.Computed': true, type: 'cds.String' },
+      supplier: String { type: 'cds.String' }
+    },
+    '@Capabilities.DeleteRestrictions.Deletable': false,
+    '@Capabilities.InsertRestrictions.Insertable': false,
+    '@Capabilities.UpdateRestrictions.Updatable': false
+  }
+}
+```
+
+This is exactly what we'd expect, but it's nice to see the details in the
+flesh, so to speak.
+
+#### Check the sample data
+
+Let's use our new understanding of the cds REPL (from [04 - Using the REPL](../04/README.md) to jump into CQL mode and check that the data is also available.
+
+👉 Jump into CQL mode:
+
+```javascript
+.ql
+```
+
+👉 At the `cql>` prompt that appears, have a look at the data:
+
+```sql
+select * from ProductSummary.ProductData;
+```
+
+and enjoy the output, which starts like this:
+
+```javascript
+[
+  {
+    ID: 1,
+    name: 'Chai',
+    category: 'BEVERAGES',
+    supplier: 'Exotic Liquids'
+  },
+  {
+    ID: 2,
+    name: 'Chang',
+    category: 'BEVERAGES',
+    supplier: 'Exotic Liquids'
+  },
+  {
+    ID: 3,
+    name: 'Aniseed Syrup',
+    category: 'CONDIMENTS',
+    supplier: 'Exotic Liquids'
+  }
+]
+```
+
+### Going beyond exploration and wrapping up
+
+Of course, this is just the start of what we might do with an imported API
+client package. But it's important to understand how we embrace it, how we
+can explore it, and to know what we have at our fingertips.
+
+See the questions section below for one on how we might proceed from where we
+have got to.
 
 ## Further info
 
@@ -514,6 +710,9 @@ TO-BE-CONTINUED
   section of the [Define Provided
   Services](https://cap.cloud.sap/docs/guides/services/providing-services)
   topic.
+- Find out more about the facilities of the [CDS Language
+  Support](https://marketplace.visualstudio.com/items?itemName=SAPSE.vscode-cds)
+  extension for VS Code.
 
 ---
 
@@ -526,7 +725,10 @@ TO-BE-CONTINUED
 1. When we added the `using from 'northwhisper-productsummary';` line in
    `services.cds`, how does the compiler know that this is a package that it
    should look inside, and not a file or directory?
-
+1. How might we continue with our consumer project now that we have
+   successfully added it as a dependency and included it in our (otherwise
+   empty) CDS model with the `using` directive? In other words, what sort of
+   consumption views might we imagine?
 
 ---
 
@@ -544,3 +746,6 @@ TO-BE-CONTINUED
    topic](https://creators.spotify.com/pod/profile/tech-aloud/episodes/The-Simplest-Thing-that-Could-Possibly-Work--A-conversation-with-Ward-Cunningham--Part-V---Bill-Venners-e5dpts).
 1. See [Why I use services.cds in simple CDS model
    examples](https://qmacro.org/blog/posts/2026/01/02/why-i-use-services-cds-in-simple-cds-model-examples/).
+1. The phrase "some incarnation of" encompasses VS Code running on your
+   own machine, or an SAP Business Application Studio dev space, or a GitHub
+   Codespace session.
