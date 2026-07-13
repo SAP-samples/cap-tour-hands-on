@@ -212,8 +212,8 @@ This should produce something like this:
 }
 "baseproj"
 {
-  "@sap/cds": "^9",
-  "@cap-js/sqlite": "^2.4"
+  "@sap/cds": "^10",
+  "@cap-js/sqlite": "^3"
 }
 ```
 
@@ -314,38 +314,6 @@ npm init ^
 ```
 
 </details>
-
-> [!NOTE]
-> On a CDS 10+ project you'll want the plugin package to be an ES module (as
-> explained where we create `cds-plugin.js` below — a plugin can't be renamed to
-> `.cjs`, so it must be ESM). Add `--init-type module` to have `npm init`
-> generate `"type": "module"` instead of the default `"type": "commonjs"`:
->
-> ```bash
-> npm init \
->   --yes \
->   --init-type module \
->   --workspace flags
-> ```
->
-> The same on Windows — PowerShell (backtick) and cmd (caret):
->
-> ```powershell
-> npm init `
->   --yes `
->   --init-type module `
->   --workspace flags
-> ```
->
-> ```cmd
-> npm init ^
->   --yes ^
->   --init-type module ^
->   --workspace flags
-> ```
->
-> This exercise targets `@sap/cds` v9, so the plain `npm init` above (which
-> generates `"type": "commonjs"`) is what we want here.
 
 This should emit something like this:
 
@@ -457,35 +425,6 @@ const cds = require('@sap/cds')
 const log = cds.log('flags')
 log('Starting up ...')
 ```
-
-> [!NOTE]
-> This is CommonJS (`require`). On a CDS 10+ project, `cds init` sets
-> `"type": "module"` in `package.json`, so `.js` files are loaded as ES modules
-> and this `require` line throws `ReferenceError: require is not defined in ES
-> module scope`.
->
-> **Unlike a regular handler, a plugin can't be renamed to `.cjs` to dodge
-> this** — CAP's plugin mechanism discovers the file by the exact name
-> `cds-plugin.js`, and a `cds-plugin.cjs` is simply not picked up. So on CDS 10+
-> the plugin has to be written as an ES module. The CDS 10+ version of this
-> file is:
->
-> ```javascript
-> import cds from '@sap/cds'
-> const log = cds.log('flags')
-> log('Starting up ...')
-> ```
->
-> Later in this exercise the plugin reads `flags/flags.json` with
-> `require('./flags')`. That also has no direct ESM equivalent — in an ES module
-> you'd instead use a JSON import attribute:
->
-> ```javascript
-> import flags from './flags.json' with { type: 'json' }
-> ```
->
-> This exercise targets `@sap/cds` v9 (no `"type": "module"`), so the CommonJS
-> form shown above is correct as written here.
 
 That should be all we need, right?
 
@@ -697,32 +636,6 @@ const log = cds.log('flags')
 log.debug('Starting up ...')
 log.debug(`Flags available for ${Object.keys(flags).length} countries`)
 ```
-
-> [!NOTE]
-> On a CDS 10+ project, `cds-plugin.js` is an ES module (see the note further up
-> where we first create it). The `require`s must become `import`s. Note that
-> `require('./flags')` resolves to `./flags.json`; in an ES module you import
-> JSON with an explicit `.json` extension and an import attribute:
->
-> ```javascript
-> import cds from '@sap/cds'
-> import flags from './flags.json' with { type: 'json' }
-> const log = cds.log('flags')
-> log.debug('Starting up ...')
-> log.debug(`Flags available for ${Object.keys(flags).length} countries`)
-> ```
->
-> If your Node.js version doesn't yet support the `with { type: 'json' }` import
-> attribute, the equivalent is to recreate `require` locally:
->
-> ```javascript
-> import cds from '@sap/cds'
-> import { createRequire } from 'node:module'
-> const require = createRequire(import.meta.url)
-> const flags = require('./flags.json')
-> ```
->
-> On this exercise's v9 project, the CommonJS form shown above is correct as-is.
 
 ### Define some helper functions
 
