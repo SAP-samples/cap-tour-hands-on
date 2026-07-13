@@ -101,11 +101,12 @@ and the contents of its `package.json` file are what we need:
 {
   "name": "emitter",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
-    "@sap/cds": "^9"
+    "@sap/cds": "^10"
   },
   "devDependencies": {
-    "@cap-js/sqlite": "^2.4"
+    "@cap-js/sqlite": "^3"
   },
   "scripts": {
     "start": "cds-serve"
@@ -121,39 +122,7 @@ and the contents of its `package.json` file are what we need:
 }
 ```
 
-> [!NOTE]
-> On CDS 10 and higher, `cds init` generates a `package.json` that pins the newer
-> major versions and, crucially, sets `"type": "module"` — which is what makes
-> Node.js treat `.js` files as ES modules (see the note about `main.cjs` further
-> down). It looks like this:
->
-> ```json
-> {
->   "name": "emitter",
->   "version": "1.0.0",
->   "type": "module",
->   "dependencies": {
->     "@sap/cds": "^10"
->   },
->   "devDependencies": {
->     "@cap-js/sqlite": "^3"
->   },
->   "scripts": {
->     "start": "cds-serve"
->   },
->   "private": true,
->   "cds": {
->     "requires": {
->       "messaging": {
->         "kind": "file-based-messaging"
->       }
->     }
->   }
-> }
-> ```
->
-> The `"type": "module"` line is the key difference — it's why a CommonJS handler
-> on CDS 10+ has to be named `main.cjs` rather than `main.js`.
+> See note on [cds 10 and ESM](../../cds10esm.md).
 
 ### Add an emitter trigger and event
 
@@ -196,75 +165,6 @@ module.exports = cds.service.impl(async function() {
   })
 })
 ```
-
-> [!NOTE]
-> This handler is written in CommonJS style (`require` and `module.exports`). On
-> CDS 10 and higher, new projects default to ECMAScript Modules — `cds init`
-> sets `"type": "module"` in `package.json`, which makes Node.js treat `.js`
-> files as ES modules. In that case, you have two choices: name this file
-> `main.cjs` (not `main.js`) so Node.js still loads it as CommonJS, or keep the
-> `.js` extension and rewrite it using ESM syntax.
->
-> Here's the same handler written as an ES module (`emitter/srv/main.js` on a
-> CDS 10+ project). Two things change: `require('@sap/cds')` becomes a default
-> `import`, and `module.exports = ...` becomes `export default ...`. The handler
-> body is identical:
->
-> ```javascript
-> import cds from '@sap/cds'
-> const log = cds.log('emitter')
->
-> export default cds.service.impl(async function() {
->   this.on('greet', async (req) => {
->     const emitter = await cds.connect.to('codejam.emitter.EmitterService')
->     log(`emitting Greeting.Received (${req.data.greeting})`)
->     await emitter.emit('Greeting.Received', { info: req.data.greeting })
->     return 'OK'
->   })
-> })
-> ```
->
-> **What's actually happening here, and why:** Node.js decides how to interpret a
-> `.js` file from the nearest `package.json`. If that file has no `"type"` field
-> (or `"type": "commonjs"`), `.js` files are loaded as **CommonJS** — the module
-> system that provides `require()` and `module.exports`, which is what the
-> original code above uses. If `"type": "module"` is set, Node.js instead loads
-> `.js` files as **ES modules**, where `require` and `module.exports` don't
-> exist; using them throws `ReferenceError: require is not defined in ES module
-> scope`. That's why, on a CDS 10+ project, you either switch to the ESM syntax
-> shown above or rename the file to `.cjs`.
->
-> The file **extension** is the explicit override that ignores the `"type"`
-> setting: `.cjs` always means CommonJS, and `.mjs` always means ES module. So on
-> a CDS 10+ project (where `"type": "module"` is the default), renaming this file
-> to `main.cjs` tells Node.js "load this one as CommonJS regardless of the
-> project default", which is exactly what the `require`/`module.exports` version
-> needs. CAP discovers handler files by base name next to the `.cds` service
-> definition, so `main.js` and `main.cjs` are found the same way — only the
-> module interpretation changes.
->
-> This exercise targets `@sap/cds` v9 (see the `package.json` above — no
-> `"type": "module"`), so the CommonJS `main.js` is correct as written here. The
-> ESM/`.cjs` alternatives matter when you build the same thing on a CDS 10+
-> project.
->
-> **If you switch this handler to ESM, you must run `npm install` in the project
-> before starting the emitter.** With the CommonJS version, `cds watch emitter`
-> starts even with no local `node_modules`, because CommonJS's module resolver
-> falls back to the `@sap/cds` bundled inside the globally installed
-> `@sap/cds-dk` that runs the command. Node.js's ESM resolver is stricter: an
-> `import` does **not** fall back to the global toolkit, so with no local
-> install you'll get:
->
-> ```log
-> Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@sap/cds' imported from .../emitter/srv/main.js
-> ```
->
-> Running `npm install` at the workspace root (which happens later in this
-> exercise anyway, in [Wire things up at the workspace
-> level](#wire-things-up-at-the-workspace-level)) puts `@sap/cds` into
-> `node_modules` so the `import` resolves. So if you're going all-in on ESM,
-> just do that `npm install` step first, before trying out the emitter.
 
 Here's a quick summary of what this does:
 
@@ -556,34 +456,6 @@ cds.once('served', async () => {
 })
 ```
 
-> [!NOTE]
-> Like `emitter/srv/main.js`, this is a CommonJS file (`require`). On a CDS 10+
-> project — where `cds init` sets `"type": "module"` and Node.js therefore treats
-> `.js` as ES modules — you can either name this file `server.cjs` so Node.js
-> loads it as CommonJS, or keep the `.js` extension and rewrite it as an ES
-> module. (See the fuller explanation next to the emitter's `main.js` above,
-> including the reminder to run `npm install` first when going all-in on ESM.)
->
-> Here's the ESM version (`receiver/server.js` on a CDS 10+ project). This file
-> has no `module.exports` to convert — it just runs code at load time — so the
-> only change is `require('@sap/cds')` becoming a default `import`:
->
-> ```javascript
-> import cds from '@sap/cds'
-> const log = cds.log('receiver')
-> const eventID = 'Greeting.Received'
->
-> cds.once('served', async () => {
->   log(`Setting up listener for ${eventID}`)
->   const EmitterService = await cds.connect.to('EmitterService')
->   EmitterService.on(eventID, (msg) => {
->     log('received:', msg.event, msg.data)
->   })
-> })
-> ```
->
-> On this exercise's v9 project, the CommonJS `server.js` above is correct as-is.
-
 We can view this as the flip side of `emitter/srv/main.js`, as it:
 
 - loads the CDS facade
@@ -636,6 +508,7 @@ examine the entire contents of our `proj-02/` directory, for example with
 │       └── main.js
 ├── package.json
 └── receiver
+    ├── package.json
     └── server.js
 
 7 directories, 8 files
