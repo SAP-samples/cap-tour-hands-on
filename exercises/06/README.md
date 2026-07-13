@@ -70,12 +70,13 @@ The resulting `package.json` should look something like this:
 {
   "name": "proj-05",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
-    "@sap/cds": "^9"
+    "@sap/cds": "^10"
   },
   "devDependencies": {
     "@cap-js/cds-test": "^1.0.1",
-    "@cap-js/sqlite": "^2.4"
+    "@cap-js/sqlite": "^3"
   },
   "scripts": {
     "start": "cds-serve"
@@ -83,25 +84,6 @@ The resulting `package.json` should look something like this:
   "private": true
 }
 ```
-
-> [!NOTE]
-> On a CDS 10+ project the generated `package.json` differs in a few ways worth
-> keeping in mind here:
->
-> - `@sap/cds` is pinned to `^10` and `@cap-js/sqlite` to `^3` (the v3 SQLite
->   driver uses Node.js' built-in `node:sqlite`, so there's no native
->   `better-sqlite3` to compile).
-> - `cds init` sets `"type": "module"`, which makes Node.js treat `.js` files as
->   ES modules.
->
-> That last point affects the **test file** we're about to write. The
-> `test/transitions.test.js` shown later uses CommonJS (`const cds =
-> require('@sap/cds')`). On a `"type": "module"` project that `require` throws
-> `ReferenceError: require is not defined in ES module scope`, so you'd either
-> name the file `transitions.test.cjs`, or keep `.js` and write it as an ES
-> module — replacing `const cds = require('@sap/cds')` with `import cds from
-> '@sap/cds'`. The `describe`/`it`/`expect` calls themselves are unchanged. This
-> exercise targets v9, so the CommonJS test file is correct as written.
 
 ## Explore testing in the cds REPL
 
@@ -352,26 +334,6 @@ describe('Initial controls', () => {
 })
 ```
 
-> [!NOTE]
-> On a CDS 10+ project (where `"type": "module"` is set), write this as an ES
-> module instead — only the first line changes, from `require` to `import`:
->
-> ```javascript
-> import cds from '@sap/cds'
-> const { GET, POST, defaults, expect } = cds.test('.')
-> defaults.path = '/odata/v4/morse'
->
-> describe('Initial controls', () => {
->
-> })
-> ```
->
-> Everything else in the file — `cds.test('.')`, `defaults.path`, and the
-> `describe`/`it`/`expect` calls added throughout the rest of this exercise —
-> stays exactly the same. `cds test` discovers and runs `*.test.js` files the
-> same way whether they're CommonJS or ES modules. (This exercise targets v9, so
-> the CommonJS version above is correct as written.)
-
 This is a simple harness for our tests.
 
 👉 Take a moment to see what differs from our explorations in the cds REPL
@@ -431,6 +393,18 @@ But as we're just starting out, that's what we'll use initially.
 ```bash
 cds test --unmute
 ```
+
+> If you see an error on startup like this:
+>
+> ```log
+> ReferenceError: require is not defined in ES module scope, you can use import instead
+> ```
+>
+> then as a workaround (this is due to the move to ESM in cds 10) while the
+> issue is addressed (should be resolved with 10.0.5), remove the
+> `"type":"module"` property in the emitter's `package.json` file. You may
+> have to do the same for the receiver later (look out for a note similar to
+> this).
 
 We see something like this:
 
