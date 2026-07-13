@@ -225,6 +225,18 @@ ex06() {
 
 }
 
+ex07() {
+
+  echo "07 - Defining constraints declaratively"
+  rm -rf proj-07 \
+    && cp -a baseproj proj-07 \
+    && cd "$_" \
+    && tree
+
+  cp "../$HERE/07/assets/srv/annotations.cds" srv/
+
+}
+
 ex08() {
 
   echo "08 - Discovering API client package export and reuse"
