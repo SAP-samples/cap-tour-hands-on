@@ -310,13 +310,13 @@ EOPRODUCTSUMMARY
 }
 EOCONSUMERPACKAGEJSON
 
-  sleep 0.1
-  jq .name ../northwhisper/apis/productsummary/package.json
-  npm add northwhisper-productsummary
+#   sleep 0.1
+#   jq .name ../northwhisper/apis/productsummary/package.json
+#   npm add northwhisper-productsummary
 
-  cat << EOSERVICES > services.cds
-using from 'northwhisper-productsummary';
-EOSERVICES
+#   cat << EOSERVICES > services.cds
+# using from 'northwhisper-productsummary';
+# EOSERVICES
 
 }
 
