@@ -345,11 +345,12 @@ section in `proj-03`'s `package.json`:
 {
   "name": "baseproj",
   "version": "1.0.0",
+  "type": "module",
   "dependencies": {
-    "@sap/cds": "^9"
+    "@sap/cds": "^10"
   },
   "devDependencies": {
-    "@cap-js/sqlite": "^2.4"
+    "@cap-js/sqlite": "^3"
   },
   "scripts": {
     "start": "cds-serve"
@@ -359,6 +360,7 @@ section in `proj-03`'s `package.json`:
     "flags"
   ]
 }
+
 ```
 
 Let's also make sure we understand the structure of what's been created, and
