@@ -43,17 +43,7 @@ see the [prerequisites](prerequisites/README.md) for more info.
     suited for local-first development: file based messaging, which we'll explore
     in this exercise.
 
-- [03 - Creating a plugin](exercises/03/README.md)
-
-    The plugin concept is fundamental to the CAP framework. Not only as a clean
-    and simple extension mechanism, but also a core building block in the
-    framework itself. Various basic components in CAP are implemented as
-    plugins, as well as many additional features.
-
-    In this exercise we'll implement a simple plugin so that we understand how
-    they're put together and how they work.
-
-- [04 - Using the REPL](exercises/04/README.md)
+- [03 - Using the REPL](exercises/03/README.md)
 
     In any language or development environment, having a REPL is a superpower, and
     it pays to embrace it and be at least a little familiar with it. CAP as a whole
@@ -63,6 +53,16 @@ see the [prerequisites](prerequisites/README.md) for more info.
 
     Node.js has a REPL, and it is upon this REPL that the cds REPL is based. In
     this exercise, we'll explore the cds REPL.
+
+- [04 - Creating a plugin](exercises/04/README.md)
+
+    The plugin concept is fundamental to the CAP framework. Not only as a clean
+    and simple extension mechanism, but also a core building block in the
+    framework itself. Various basic components in CAP are implemented as
+    plugins, as well as many additional features.
+
+    In this exercise we'll implement a simple plugin so that we understand how
+    they're put together and how they work.
 
 - [05 - Exploring status-transition flows](exercises/05/README.md)
 
