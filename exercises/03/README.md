@@ -1,12 +1,13 @@
-# 03 - Creating a plugin
+# 03 - Using the REPL
 
-The plugin concept is fundamental to the CAP framework. Not only as a clean and
-simple extension mechanism, but also a core building block in the framework
-itself. Various basic components in CAP are implemented as plugins, as well as
-many additional features.
+In any language or development environment, having a REPL is a superpower, and
+it pays to embrace it and be at least a little familiar with it. CAP as a whole
+is built on solid foundations and practices that have matured over the decades,
+and the REPL is part of that, first appearing in the 1960's and initially
+popularised in the LISP and LISP-derivative language communities.
 
-In this exercise we'll implement a simple plugin so that we understand how
-they're put together and how they work.
+Node.js has a REPL, and it is upon this REPL that the cds REPL is based. In this
+exercise, we'll explore the cds REPL.
 
 ## Start a new CAP project
 
@@ -18,8 +19,7 @@ a bit of time.
 ```bash
 rm -rf proj-03 \
   && cp -a baseproj proj-03 \
-  && cd $_ \
-  && tree
+  && cd $_
 ```
 
 <details>
@@ -29,7 +29,6 @@ rm -rf proj-03 \
 Remove-Item -Recurse -Force proj-03 -ErrorAction SilentlyContinue
 Copy-Item -Recurse baseproj proj-03
 Set-Location proj-03
-tree /F
 ```
 
 </details>
@@ -38,726 +37,969 @@ tree /F
 <summary>Windows (cmd)</summary>
 
 ```cmd
-rmdir /s /q proj-03 2>nul & xcopy baseproj proj-03 /e /i /q & cd proj-03 & tree /f
+rmdir /s /q proj-03 2>nul & xcopy baseproj proj-03 /e /i /q & cd proj-03
 ```
 
 </details>
 
-## Install the runtime
+We should by now be familiar with the contents of this project, a very reduced
+version of Northwind, with just products, suppliers and categories (each of
+which have just a few fields) exposed in a single service.
 
-Normally this point in a project would be too early to think about installing
-the `@sap/cds` runtime and the rest of the project dependencies. But we'll do
-it here because it makes things simpler in terms of paths (relative and
-absolute) when we come to looking at some `@sap/cds` runtime components. It's
-easier to refer to and view them relative to (within) our `proj-03/` project
-directory, than in a global install location elsewhere.
+## Fire up the cds REPL
 
-👉 Install the package dependencies for the project:
+Let's dive right in.
 
-```bash
-npm install
-```
-
-## Explore plugins as core building blocks
-
-Let's see if we can find evidence of the plugin concept being used in the core
-framework. We can turn on debugging for the plugins module and have a look.
-
-👉 Start up the server with the `DEBUG` environment variable set to `plugins`:
-
-```bash
-DEBUG=plugins cds watch
-```
-
-<details>
-<summary>Windows (PowerShell / cmd)</summary>
-
-Windows shells don't support the inline `VAR=value command` syntax; set the
-environment variable first. This applies to every `DEBUG=plugins cds watch` in
-this exercise.
-
-PowerShell:
-
-```powershell
-$env:DEBUG='plugins'; cds watch
-```
-
-cmd:
-
-```cmd
-set DEBUG=plugins && cds watch
-```
-
-</details>
-
-Some interesting output appears in the server log, like this:
-
-```log
-[cds.plugins] - fetched plugins in: 1.401ms
-[cds.plugins] - loading @sap/cds-fiori: {
-  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
-}
-[cds.plugins] - loading @cap-js/sqlite: {
-  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
-}
-[cds.plugins] - loaded plugins in: 3.791ms
-[cds] - loaded model from 2 file(s):
-
-  srv/main.cds
-  db/schema.cds
-
-...
-[cds] - server listening on { url: 'http://localhost:4004' }
-[cds] - server v10.0.3 launched in 286 ms
-```
-
-We can see there are two plugins being fetched and loaded:
-
-- `@sap/cds-fiori`
-- `@cap-js/sqlite`
-
-So let's investigate where these plugins are coming from and why they're
-being loaded.
-
-### Look at the dependent packages
-
-If we dig in (see the [Further info](#further-info) section), we'll see that
-the core plugin mechanism looks for package dependencies for two key locations:
-
-- [cds.home](https://cap.cloud.sap/docs/node.js/cds-facade#cds-home): the
-  location of the in-use `@sap/cds` runtime (which we've just installed and
-  therefore is within the project's `node_modules/` directory)
-- [cds.root](https://cap.cloud.sap/docs/node.js/cds-facade#cds-root): the
-  project root directory
-
-#### Determine the home and root values
-
-Use the cds REPL to confirm what the values are for your setup.
-
-👉 Start the cds REPL:
+👉 Start the REPL:
 
 ```bash
 cds repl
 ```
 
-👉 At the prompt, ask for the values of both `cds.home` and `cds.root`.
+and you'll be presented with a simple prompt:
 
-You should see something like this:
-
-```log
-node ➜ /workspaces/cap-tour-hands-on/proj-03/ (main) $ cds repl
+```text
 Welcome to cds repl v10.0.3
-> cds.home
-/workspaces/cap-tour-hands-on/proj-03/node_modules/@sap/cds
-> cds.root
-/workspaces/cap-tour-hands-on/proj-03
 >
 ```
 
-Depending on your setup, the values, especially the first parts of the paths,
-may be different. But the key thing is that they're both, (literally)
-relatively speaking, easily accessible from where you are right now in
-`proj-03/`:
+whereupon, to honour one of the pivotal moments in the birth of personal
+computing[<sup>1</sup>](#footnotes), there's only one thing we should type in
+at this point, and that's `2 + 2`:
 
-- `cds.home` is `./node_modules/@sap/cds`
-- `cds.root` is `.`
-
-#### Look at the dependencies
-
-Now we know the actual locations, let's take a look at the dependencies - these
-will be listed in `dependencies` and `devDependencies` sections within the
-`package.json` files in each of these two locations.
-
-👉 List the dependencies of both these locations:
-
-```bash
-jq '.name, .dependencies + .devDependencies' \
-  ./node_modules/@sap/cds/package.json \
-  ./package.json
+```javascript
+> 2 + 2
+4
 ```
 
-<details>
-<summary>Windows (PowerShell / cmd)</summary>
+> In subsequent suggested cds REPL commands for you to enter, the prompt (`>`)
+> won't be shown, unless it's part of an illustration that includes output from
+> that command.
 
-`jq` works the same, but replace the bash line-continuation `\` with the
-line-continuation character for your shell, or put it all on one line.
+Yes, this Node.js based REPL expects and interprets JavaScript, unsurprisingly.
 
-PowerShell (uses a backtick `` ` ``):
+## Explore the commands
 
-```powershell
-jq '.name, .dependencies + .devDependencies' `
-  ./node_modules/@sap/cds/package.json `
-  ./package.json
+The cds REPL adds a few extra commands to the standard Node.js REPL.
+
+👉 Look at what commands are available:
+
+```javascript
+.help
 ```
 
-cmd (uses a caret `^`):
+and you should see a list like this:
 
-```cmd
-jq ".name, .dependencies + .devDependencies" ^
-  node_modules/@sap/cds/package.json ^
-  package.json
+```text
+.break     Sometimes you get stuck, this gets you out
+.clear     Alias for .break
+.editor    Enter editor mode
+.exit      Exit the REPL
+.help      Print this help message
+.inspect   Sets options for util.inspect, e.g. `.inspect .depth=1`.
+.load      Load JS from a file into the REPL session
+.ql        Switch to cql repl mode, evaluating cql queries
+.run       Runs a cds server from a given CAP project folder, or module name like @capire/bookshop.
+.save      Save all evaluated commands in this REPL session to a file
 ```
 
-</details>
+The cds REPL specific commands are `.inspect`, `.ql` and `.run`.
 
-This should produce something like this:
+### Try out .inspect
 
-```json
-"@sap/cds"
-{
-  "@sap/cds-compiler": "^6.4",
-  "@sap/cds-fiori": "^2",
-  "express": "^4.22.1 || ^5",
-  "yaml": "^2"
+The `.inspect` command is a configurable structure viewer, effectively. It
+gives us a comfortable way of looking at structures, either as part of the CAP
+runtime, or as part of a model.
+
+Take the CDS facade as an example - the entrypoint to the surface area of CAP
+facilities (See [Further info](#further-info)). In the cds REPL, it's available
+by default, injected into the context.
+
+👉 Take a look:
+
+```javascript
+cds
+```
+
+This emits a ton of output:
+
+```javascript
+cds {
+  _events: {},
+  _eventsCount: 0,
+  _maxListeners: undefined,
+  model: undefined,
+  db: undefined,
+  cli: { command: 'repl', argv: [], options: { run: undefined } },
+  root: '/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-03',
+  services: {},
+  extend: [Function (anonymous)],
+  home: '/home/dj/.npm-packages/lib/node_modules/@sap/cds-dk/node_modules/@sap/cds',
+  version: '9.9.1',
+  parse: [Function: exports] {
+    cdl: [Function: cdl],
+    cql: [Function: cql],
+    path: [Function: path],
+    expr: [Function: expr],
+    xpr: [Function (anonymous)],
+    ref: [Function (anonymous)],
+    properties: [Function (anonymous)],
+    yaml: [Function (anonymous)],
+    csv: [Function (anonymous)],
+    json: [Function (anonymous)],
+    ttl: [Function (anonymous)],
+    _select: [Function (anonymous)]
+  },
+  utils: <ref *3> {
+    path: <ref *2> {
+      resolve: [Function: resolve],
+      normalize: [Function: normalize],
+      isAbsolute: [Function: isAbsolute],
+      join: [Function: join],
+      relative: [Function: relative],
+      toNamespacedPath: [Function: toNamespacedPath],
+
+      ... (many many more lines)
+```
+
+With regular JavaScript facilities, we can get a better overview.
+
+👉 Try this:
+
+```javascript
+Object.keys(cds)
+```
+
+This is a little cumbersome, and also is a bit too far the other way (not
+enough information):
+
+```javascript
+[
+  '_events',       '_eventsCount',
+  '_maxListeners', 'model',
+  'db',            'cli',
+  'root',          'services',
+  'extend',        'home',
+  'version',       'parse',
+  'utils'
+]
+```
+
+This is where `.inspect` comes in, the [dialectical
+third](https://en.wikipedia.org/wiki/Goldilocks_and_the_Three_Bears#:~:text=this%20as%20the%20%22-,dialectical%20three,-%22%20where%20%22the%20first)
+option - just right.
+
+👉 Give it a go:
+
+```javascript
+.inspect cds
+```
+
+This emits something like this:
+
+```javascript
+cds: cds {
+  _events: [Object: null prototype] {},
+  _eventsCount: 0,
+  _maxListeners: undefined,
+  model: undefined,
+  db: undefined,
+  cli: [Object],
+  root: '/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-03',
+  services: {},
+  extend: [Function (anonymous)],
+  home: '/home/dj/.npm-packages/lib/node_modules/@sap/cds-dk/node_modules/@sap/cds',
+  version: '9.9.1',
+  parse: [Function],
+  utils: [Object],
+  Symbol(shapeMode): false,
+  Symbol(kCapture): false
 }
-"baseproj"
-{
-  "@sap/cds": "^10",
-  "@cap-js/sqlite": "^3"
-}
 ```
 
-### Look for signs of plugins
+It's also possible to control the "volume" of output, either on an
+execution-by-execution basis (`.inspect .depth=3 cds`) or by updating the
+default (`.inspect .depth=2`). It goes all the way to
+11[<sup>2</sup>](#footnotes).
 
-We know from Capire (see the [Further info](#further-info) section) that the
-key file that makes your package a plugin, like the "index" file in other
-contexts, is `cds-plugin.js`. So let's see whether we can find any instance of
-such a file.
+### Try out .run
 
-👉 Look for `cds-plugin.js` files starting from the project root (`.`) which
-will then also include the project's `node_modules/` directory:
+In the output from `.inspect cds` just now, there were fewer than 20 properties
+shown. Some of these, such as `model`, `db` and `services` were also either
+undefined or empty. That's because we're not currently running any CAP server
+in the context of this cds REPL session (and thus there's no model, no database
+connection, and no services).
 
-```bash
-find . -name cds-plugin.js 
+With the `.run` command we can change that, and start up a server.
+
+👉 Try that now, specifying `.` as the location for the project definitions,
+i.e. the `proj-03/` directory we're in:
+
+```javascript
+.run .
 ```
 
-<details>
-<summary>Windows (PowerShell / cmd)</summary>
-
-The Unix `find` command isn't available; use the native recursive search for
-your shell.
-
-PowerShell:
-
-```powershell
-Get-ChildItem -Recurse -Filter cds-plugin.js | ForEach-Object { $_.FullName }
-```
-
-cmd:
-
-```cmd
-dir /s /b cds-plugin.js
-```
-
-</details>
-
-and bingo - we have two:
+We get some usual server output which we're used to from `cds watch` (in fact
+the invocation is effectively the same, except that a random port is chosen
+instead of the default 4004):
 
 ```log
-./node_modules/@sap/cds-fiori/cds-plugin.js
-./node_modules/@cap-js/sqlite/cds-plugin.js
+[cds] - using bindings from: { registry: '~/.cds-services.json' }
+[cds] - loaded model from 2 file(s):
+
+  srv/main.cds
+  db/schema.cds
+
+[cds] - connect to db > sqlite { database: ':memory:' }
+  > init from db/data/northwhisper-Suppliers.csv
+  > init from db/data/northwhisper-Products.csv
+  > init from db/data/northwhisper-Categories.csv
+/> successfully deployed to in-memory database.
+
+[cds] - using auth strategy { kind: 'mocked' }
+[cds] - serving Main {
+  at: [ '/northwhisper' ],
+  decl: 'srv/main.cds:4'
+}
+[cds] - server listening on { url: 'http://localhost:40625' }
+[cds] - server v10.0.3 launched in 872550 ms
+[cds] - [ terminate with ^C ]
 ```
 
-And yes, these are `cds-plugin.js` files in packages (`@sap/cds-fiori` and
-`@cap-js/sqlite`) that exactly match those we saw in the CAP server log output.
-And, also yes, the SQLite module is implemented ... as a plugin.
+But what we also get is something additional:
 
-## Build the skeleton of our own plugin
+```log
+Following variables are made available in your repl's global context:
 
-Now we know what we need - a package with a `cds-plugin.js` file - let's create
-one. Even here we can embrace the local-first development mode that CAP
-celebrates by using NPM's "workspaces" concept (see [Further
-info](#further-info)), which will allow us to create the plugin locally but
-still "require" it via the normal `package.json#dependencies` route (we touch
-on this in [02 - Mocking messaging](../02/README.md)).
+from cds.entities: {
+  Products,
+  Categories,
+  Suppliers,
+}
+
+from cds.services: {
+  db,
+  Main,
+}
+
+Simply type e.g. Main in the prompt to use the respective objects.
+```
+
+What happens is that the `.run` mechanism identifies entities and services
+within the project and makes them available in the cds REPL context, globally,
+and very conveniently for us!
+
+### Use the run facility as a cds REPL option
+
+This is so convenient and very often what you want when launching a cds REPL,
+it's available as an option at invocation time.
+
+👉 First, exit the current cds REPL session (with `Ctrl-D`).
+
+👉 Now restart the cds REPL, but this time specify that you want to have a CAP
+server started up automatically for the project in the current directory:
+
+```bash
+cds repl --run . # or cds r -r .
+```
+
+👉 Once you're at the cds REPL prompt, explore the global variables there, such
+as `Products`, `db` and `Main`, by typing them into the cds REPL prompt. Try to
+notice not only the different object types:
+
+- `Products`: `entity`
+- `db`: `SQLiteService`
+- `Main`: `ApplicationService`
+
+but also each object's component parts. For example we can see the element
+details in the `Products` entity:
+
+```javascript
+entity {
+  kind: 'entity',
+  elements: LinkedDefinitions {
+    ProductID: Integer { key: true, type: 'cds.Integer' },
+    ProductName: String { type: 'cds.String' },
+    UnitPrice: Decimal { type: 'cds.Decimal' },
+    Category: Association {
+      type: 'cds.Association',
+      target: 'northwhisper.Categories',
+      keys: [
+        {
+          ref: [ 'CategoryID' ],
+          '$generatedFieldName': 'Category_CategoryID'
+        }
+      ]
+    },
+    Category_CategoryID: Integer { type: 'cds.Integer', '@odata.foreignKey4': 'Category' },
+    Supplier: Association {
+      type: 'cds.Association',
+      target: 'northwhisper.Suppliers',
+      keys: [
+        {
+          ref: [ 'SupplierID' ],
+          '$generatedFieldName': 'Supplier_SupplierID'
+        }
+      ]
+    },
+    Supplier_SupplierID: Integer { type: 'cds.Integer', '@odata.foreignKey4': 'Supplier' },
+    UnitsInStock: Integer { type: 'cds.Integer' },
+    Discontinued: Boolean { type: 'cds.Boolean' }
+  }
+}
+```
+
+However, due to how some of the detail is structured and stored, as
+`LinkedDefinitions` (see [Further info](#further-info)), we can sometimes
+struggle to enumerate members in a way we would normally expect. For example:
+
+```javascript
+Main.entities
+```
+
+will just emit:
+
+```javascript
+[object Function]
+```
 
 > [!NOTE]
-> What will the plugin do? Well, let's keep it super simple so we can focus on
-> the plugin mechanics. It should replace country values with the corresponding
-> flag emojis, for elements that have been marked with a `@flagify` annotation.
-> An essential enterprise feature, I'm sure you'll agree!
->
-> By the way, if you're running Windows, note that you'll have to use Firefox if
-> you want the emojis to render properly.
+> On cds 10 and higher this situation is improved — the cds REPL expands
+> `LinkedDefinitions` for you, so typing `Main.entities` there will already show
+> the entities (much like the `.inspect` output below) rather than the terse
+> `[object Function]`. So if you're on cds 10+, your output here may not match
+> what's shown — that's expected, and a welcome improvement.
 
-### Create the plugin package directory
+Instead, we can use `.inspect`.
 
-👉 Create a new package for the plugin by initialising a new package in the
-context of a new workspace called "flags":
+👉 Try it:
 
-```bash
-npm init \
-  --yes \
-  --workspace flags
+```javascript
+.inspect Main.entities
 ```
 
-<details>
-<summary>Windows (PowerShell / cmd)</summary>
+which produces:
 
-`npm init` works the same; replace the bash line-continuation `\` with the
-line-continuation character for your shell, or put it all on one line.
-
-PowerShell (uses a backtick `` ` ``):
-
-```powershell
-npm init `
-  --yes `
-  --workspace flags
+```javascript
+Main.entities: [Function (anonymous)] LinkedDefinitions {
+  Products: [entity],
+  Categories: [entity],
+  Suppliers: [entity]
+}
 ```
 
-cmd (uses a caret `^`):
+> Of course, we can use other techniques to access this information, such as
+> with the spread syntax (`[...Main.entities]`)[<sup>3</sup>](#footnotes) or
+> using destructuring (`{ Products } = Main.entities`). Exploration of these
+> approaches is left as an exercise for you, dear reader.
 
-```cmd
-npm init ^
-  --yes ^
-  --workspace flags
+### Revisit the inspection of the CDS facade
+
+Now that we have a running server in the cds REPL, let's revisit the CDS facade.
+
+👉 Re-inspect it now:
+
+```javascript
+.inspect cds
 ```
 
-</details>
+This time, we see lots more top-level properties:
+
+```javascript
+cds: cds {
+  _events: [Object: null prototype],
+  _eventsCount: 6,
+  _maxListeners: undefined,
+  model: [LinkedCSN],
+  db: [SQLiteService],
+  cli: [Object],
+  root: '/work/gh/github.com/SAP-samples/cap-tour-hands-on/proj-03',
+  services: [Object],
+  extend: [Function (anonymous)],
+  home: '/home/dj/.npm-packages/lib/node_modules/@sap/cds-dk/node_modules/@sap/cds',
+  version: '9.9.1',
+  parse: [Function],
+  utils: [Object],
+  options: [Object],
+  env: [Config],
+  plugins: [Promise],
+  server: [AsyncFunction],
+  log: [Function],
+  builtin: [Object],
+  service: [Function],
+  requires: {},
+  app: [Function],
+  debug: [Function: cds_debug],
+  resolve: [Function],
+  load: [Function],
+  compile: [Function],
+  deploy: [Function],
+  edmxs: null,
+  minify: [Function],
+  type: [class type extends any],
+  linked: [Function],
+  entity: [class entity extends struct],
+  connect: [AsyncFunction],
+  Service: [Function]
+  infer: [Function],
+  ql: [Function],
+  compiler: [Object],
+  EventContext: [Function],
+  User: [Function],
+  serve: [Function (anonymous)],
+  i18n: [I18nFacade],
+  ApplicationService: [Function],
+  middlewares: [Object],
+  Request: [Function: Request],
+  shutdown: [AsyncFunction: _shutdown],
+  Symbol(shapeMode): false,
+  Symbol(kCapture): false
+}
+```
+
+All of the empty properties mentioned earlier now have values.
+
+👉 Take a moment to explore these, with, for example:
+
+- `cds.model` (effectively the compiled model, in an internal CSN
+  representation)
+- `cds.db === db` (yes, the database property points to the `db` service)
+- `[...cds.services].map(x => [x.name, x.kind])` (a look at each service and
+  their kinds)
+
+### Try out query construction and .ql
+
+While this section fits in naturally with the flow (we've tried out the other
+cds REPL specific commands `.run` and `.inspect` so far), we need to take a
+step back a little first.
+
+The `.ql` command switches us into a different cds REPL mode where we can
+enter query constructs directly. But before we do that, it's worth taking
+a moment to explore queries in more general terms. So let's do that
+first.
+
+In CAP, query objects are first class citizens and essential to our
+understanding of the fundamentals. There are many ways of constructing and
+executing queries (see [Further info](#further-info)) - let's start with the
+REST-style API.
+
+#### Explore the REST-style API
+
+Let's read the details of the "Chai" product, using the `db` variable that's been
+made available to us.
+
+👉 First, let's remind ourselves of what `db` represents:
+
+```javascript
+db
+```
+
+It's a `SQLiteService` object representing the database connection, effectively:
+
+```javascript
+SQLiteService {
+  name: 'db',
+  options: [Object],
+  kind: 'sqlite',
+  model: [LinkedCSN],
+  handlers: [EventHandlers],
+  definition: undefined,
+  pools: [Object],
+  class: [Function],
+  _source: '/home/dj/.npm-packages/lib/node_modules/@sap/cds-dk/node_modules/@cap-js/sqlite/index.js',
+  onDELETE: [AsyncFunction: deep_delete]
+}
+```
+
+We can call HTTP style methods on this object, passing objects that represent
+the entities, objects that have also been made available in the cds REPL
+context.
+
+👉 Try that now, with a `get` method:
+
+```javascript
+db.get(Products).where({ProductName:'Chai'})
+```
+
+What we get from this is a little unexpected, but very enlightening:
+
+```javascript
+cds.ql {
+  SELECT: {
+    from: { ref: [ 'northwhisper.Products' ] },
+    where: [ { ref: [ 'ProductName' ] }, '=', { val: 'Chai' } ]
+  }
+}
+```
+
+It's a representation (in CQN) of the first class query object we've just constructed.
+
+> For the deepest dive you could ever wish for on queries and expressions,
+> covering CDL, CSN, CQL, CQN, CXL and CXN, have a look at the [CDS expressions
+> in
+> CAP](https://qmacro.org/blog/posts/2025/12/09/a-new-hands-on-sap-dev-mini-series-on-the-core-expression-language-in-cds/)
+> series of videos and accompanying detailed blog posts.
+
+OK, so we have a query object. What should we do with it? Well, we can send it
+to the database to be executed, via the `run` method of the `db` object.
+
+👉 But first, for convenience, and to meditate for a second on the nature of
+queries as first class objects, let's re-create the query and assign the
+resulting query object to a variable:
+
+```javascript
+chai = db.get(Products).where({ProductName:'Chai'})
+```
+
+👉 Now let's send it to be executedL
+
+```javascript
+db.run(chai)
+```
+
+Oh:
+
+```javascript
+Promise {
+  <pending>,
+  Symbol(async_id_symbol): 223,
+  Symbol(trigger_async_id_symbol): 2
+}
+```
+
+More [gratification delay](https://en.wikipedia.org/wiki/Delayed_gratification)!
+
+👉 As with most things in Node.js, execution is asynchronous. So we need to
+`await` the call:
+
+```javascript
+await db.run(chai)
+```
+
+Success!
+
+```javascript
+[
+  {
+    ProductID: 1,
+    ProductName: 'Chai',
+    UnitPrice: 18,
+    Category_CategoryID: 1,
+    Supplier_SupplierID: 1,
+    UnitsInStock: 39,
+    Discontinued: false
+  }
+]
+```
+
+Actually, we can await the query directly, and the default behaviour for such
+query objects is to be executed via `db.run`:
+
+👉 Let's try that:
+
+```javascript
+await chai
+```
+
+This, therefore, gives us the same effect. Nice!
+
+#### Explore the CRUD-style API
+
+Let's spend a brief moment on the CRUD-style API (see also [Further
+info](#further-info)), which is an alternative set of convenience methods to
+contruct queries.
+
+👉 Let's have a look at a luxury product, using `read` (the "R" in "CRUD")
+instead of the more HTTP-like `get`):
+
+```javascript
+await db.read(Products).where({ProductName:{'like':'%Kaviar%'}})
+```
+
+which shows us:
+
+```javascript
+[
+  {
+    ProductID: 73,
+    ProductName: 'Röd Kaviar',
+    UnitPrice: 15,
+    Category_CategoryID: 8,
+    Supplier_SupplierID: 17,
+    UnitsInStock: 101,
+    Discontinued: false
+  }
+]
+```
+
+👉 Let's try another CRUD-style method to update the price:
+
+```javascript
+await db.update(Products).set({UnitPrice: 20}).where({ProductID:73})
+```
+
+The number of rows affected is returned:
+
+```javascript
+1
+```
+
+So this was a little taste of an alternative API.
+
+Both styles of API we've seen so far are essentially convenience methods that
+build query objects that can also be constructed more "natively" with the
+`cds.ql` method. Let's explore that now.
+
+#### Explore cds.ql and its fluent API helper functions
+
+Querying in CAP Node.js revolves around `cds.ql` which also sports useful
+helper functions (`SELECT`, `INSERT`, `UPDATE`, `DELETE`) which makes for a
+fluent-style API approach to query construction. [The world is our
+oyster](https://nosweatshakespeare.com/quotes/famous/the-worlds-your-oyster/)!
+
+👉 Try constructing a query using one of these helper functions.
+
+```javascript
+q = SELECT.from(Products).where({UnitPrice:20}).orderBy({ProductName:'desc'})
+```
+
+This will produce an object that, represented in CQN, looks like this:
+
+```javascript
+cds.ql {
+  SELECT: {
+    from: { ref: [ 'northwhisper.Products' ] },
+    where: [ { ref: [ 'UnitPrice' ] }, '=', { val: 20 } ],
+    orderBy: [ { ref: [ 'ProductName' ], sort: 'desc' } ]
+  }
+}
+```
+
+Note that the "class" is `cds.ql`, indicating that the `SELECT` indeed helped
+us construct a query object.
+
+And of course, `await`ing the query object will cause it to be executed:
+
+```javascript
+> await q
+[
+  {
+    ProductID: 73,
+    ProductName: 'Röd Kaviar',
+    UnitPrice: 20,
+    Category_CategoryID: 8,
+    Supplier_SupplierID: 17,
+    UnitsInStock: 101,
+    Discontinued: false
+  },
+  {
+    ProductID: 49,
+    ProductName: 'Maxilaku',
+    UnitPrice: 20,
+    Category_CategoryID: 3,
+    Supplier_SupplierID: 23,
+    UnitsInStock: 10,
+    Discontinued: false
+  }
+]
+```
+
+What if we were to not use the `SELECT` helper function, and instead pass some
+CQL directly to `cds.ql`? What would that look like?
+
+Let's try it:
+
+```javascript
+cds.ql `select from Products where UnitPrice = 20 order by ProductName desc`
+```
+
+What's produced is a query object that's pretty much the same as before:
+
+```javascript
+cds.ql {
+  SELECT: {
+    from: { ref: [ 'Products' ] },
+    where: [ { ref: [ 'UnitPrice' ] }, '=', { val: 20 } ],
+    orderBy: [ { ref: [ 'ProductName' ], sort: 'desc' } ]
+  }
+}
+```
+
+Now we're getting to the heart of queries, the facilities that revolve around
+and are supported by `cds.ql`. You'll find that the flexibility and power of
+CQL means that you'll likely want to use `cds.ql` more often than you think.
+
+And for that, there's a special mode in the cds REPL.
+
+#### Invoke the .ql command
+
+That mode is "cql" mode, and is what we get to with the third of the three cds
+REPL specific commands.
+
+👉 Enter the "cql" mode by using the `.ql` command, whereupon the prompt will
+change from the standard "JavaScript" mode prompt (`>`) to the "cql" prompt:
+
+```javascript
+> .ql
+cql>
+```
+
+Here we can enter CQL comfortably and directly, and it gets passed to `cds.ql`,
+turned into a query object, and executed.
+
+Re-try that CQL but in "direct" fashion here in "cql" mode:
+
+```sql
+select from Products where UnitPrice = 20 order by ProductName desc
+```
+
+The query result is provided without fanfare, exactly what we want:
+
+```javascript
+[
+  {
+    ProductID: 73,
+    ProductName: 'Röd Kaviar',
+    UnitPrice: 20,
+    Category_CategoryID: 8,
+    Supplier_SupplierID: 17,
+    UnitsInStock: 101,
+    Discontinued: false
+  },
+  {
+    ProductID: 49,
+    ProductName: 'Maxilaku',
+    UnitPrice: 20,
+    Category_CategoryID: 3,
+    Supplier_SupplierID: 23,
+    UnitsInStock: 10,
+    Discontinued: false
+  }
+]
+```
+
+There's so much more to explore here (and not enough space!), so please refer
+to the "Querying in JavaScript" link in the [Further info](#further-info)
+section.
+
+If we were to ask for `.help` at this point in "cql" mode, we'd see the command
+that takes us back to the "JavaScript" prompt is `.js`.
+
+👉 Switch back now:
+
+```javascript
+.js
+```
+
+## Explore CAP building blocks by creating a new service
+
+With access to the entire CDS facade and an executable CAP "interpreter" at our
+fingertips, we can do pretty much anything we want. Let's finish off this
+exercise by creating a service from scratch and sending a message to it. Why?
+So we understand the fundamentals and get a better understanding of what
+services and messages really are.
+
+### Explore the Main handlers
+
+👉 First, revisit the `Main` service object and have a look at its handlers:
+
+```javascript
+Main.handlers
+```
+
+This shows us that there are many built-in handlers (remember, one of the key
+reasons to use CAP is that [the code is in the
+framework](https://qmacro.org/blog/posts/2024/11/07/five-reasons-to-use-cap/#1-the-code-is-in-the-framework-not-outside-of-it)):
+
+```javascript
+EventHandlers {
+  _initial: [
+    {
+      before: '*',
+      handler: [Function: check_service_level_restrictions]
+    },
+    { before: '*', handler: [Function: check_auth_privileges] },
+    { before: '*', handler: [Function: check_readonly] },
+    { before: '*', handler: [Function: check_insertonly] },
+    { before: '*', handler: [Function: check_odata_constraints] },
+    { before: '*', handler: [Function: check_autoexposed] },
+    { before: '*', handler: [AsyncFunction: enforce_auth] },
+    { before: 'READ', handler: [Function: restrict_expand] },
+    { before: 'CREATE', handler: [AsyncFunction: validate_input] },
+    { before: 'UPDATE', handler: [AsyncFunction: validate_input] },
+    { before: 'NEW', handler: [AsyncFunction: validate_input] },
+    { before: 'READ', handler: [Function: handle_paging] },
+    { before: 'READ', handler: [Function: handle_sorting] }
+  ],
+  before: [],
+  on: [
+    { on: 'CREATE', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'READ', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'UPDATE', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'UPSERT', handler: [AsyncFunction: handle_crud_requests] },
+    { on: 'DELETE', handler: [AsyncFunction: handle_crud_requests] }
+  ],
+  after: [
+    { after: 'CREATE', handler: [AsyncFunction (anonymous)] },
+    { after: 'UPSERT', handler: [AsyncFunction (anonymous)] },
+    { after: 'UPDATE', handler: [AsyncFunction (anonymous)] }
+  ],
+  _error: []
+}
+```
+
+We're looking at a basic building block in CAP here; after all, [everything is
+a
+service](https://qmacro.org/blog/posts/2024/12/10/tasc-notes-part-4/#everything-is-a-service)!
+What's more, [services are
+cheap](https://github.com/qmacro/capref/blob/main/axioms/AXI004.md)!
+
+### Create a new basic service
+
+We saw earlier that `Main` has the type `ApplicationService`, effectively an
+instance of the `cds.ApplicationService` class.
+
+Capire's "Core Services" topic
+(see [Further info](#further-info)) tells us that `cds.ApplicationService` is
+built upon the base class `cds.Service` which has everything we need for the
+behaviour of reacting to messages through execution of registered event handlers.
+
+👉 So let's create a new instance of `cds.Service`, as that's all we should need:
+
+```javascript
+srv = new cds.Service
+```
 
 This should emit something like this:
 
-```log
-Wrote to [...]/proj-03/flags/package.json:
-
-{
-  "name": "flags",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs"
+```javascript
+Service {
+  name: 'Service',
+  options: {},
+  handlers: [EventHandlers],
+  definition: undefined
 }
-
-added 1 package in 312ms
 ```
 
-Perhaps more interestingly, it's also caused the addition of a new `workspaces`
-section in `proj-03`'s `package.json`:
-
-```json
-{
-  "name": "baseproj",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@sap/cds": "^10"
-  },
-  "devDependencies": {
-    "@cap-js/sqlite": "^3"
-  },
-  "scripts": {
-    "start": "cds-serve"
-  },
-  "private": true,
-  "workspaces": [
-    "flags"
-  ]
-}
-
-```
-
-Let's also make sure we understand the structure of what's been created, and
-where.
-
-👉 Have a look:
-
-```bash
-tree -F -I node_modules
-```
-
-<details>
-<summary>Windows (PowerShell / cmd)</summary>
-
-The built-in Windows `tree` has no `-I` (ignore) option, so it can't exclude
-`node_modules` and the output style differs. Easiest is to run `tree /F` from
-inside a temporary view, or just accept the extra `node_modules` output. To get
-a filtered listing closer to the example:
-
-PowerShell:
-
-```powershell
-Get-ChildItem -Recurse -Exclude node_modules | Where-Object { $_.FullName -notmatch '\\node_modules\\' } | Select-Object FullName
-```
-
-cmd (lists the tree but includes node_modules):
-
-```cmd
-tree /f
-```
-
-</details>
-
-This should show something like this, where we can see that our new plugin
-package is in its own `flags/` directory:
-
-```log
-./
-├── db/
-│   ├── data/
-│   │   ├── northwhisper-Categories.csv
-│   │   ├── northwhisper-Products.csv
-│   │   └── northwhisper-Suppliers.csv
-│   └── schema.cds
-├── flags/
-│   └── package.json
-├── package-lock.json
-├── package.json
-└── srv/
-    └── main.cds
-
-5 directories, 11 files
-```
-
-### Add some startup logging
-
-For this skeleton step, all we want to do is get the plugin to announce itself.
-
-👉 Create a new file in the plugin directory (`flags/`) called `cds-plugin.js`
-with this content:
+If we were to look at the handlers, we'd see that -- in contrast to `Main`'s
+handlers -- there are none yet:
 
 ```javascript
-const cds = require('@sap/cds')
-const log = cds.log('flags')
-log('Starting up ...')
+> srv.handlers
+EventHandlers {
+  _initial: [],
+  before: [],
+  on: [],
+  after: [],
+  _error: []
+}
 ```
 
-That should be all we need, right?
+### Send a message
 
-### Start up the main project
+That means that there will be nothing to handle anything.
 
-👉 Now start up the main service in `proj-03/` like we did before:
+👉 Try one anyway:
 
-```bash
-DEBUG=plugins cds watch
+```javascript
+await srv.send('codejam', { location: 'Rot' })
+```
+
+The message is sent, but there's no reaction.
+
+### Define a handler
+
+What's [the simplest thing that could possibly
+work](https://creators.spotify.com/tech-aloud/episodes/SAP-BTP-runtimes--my-personal-considerations-and-preferences-on-Cloud-Foundry--Kyma--ABAP-runtimes---Mauricio-Lauffer---18-Jun-2025-e34tadv)
+here as a handler? How about just `console.log`[<sup>4</sup>](#footnotes):
+
+```javascript
+srv.on('codejam', console.log)
+```
+
+This is now visible in the list of handlers:
+
+```javascript
+> srv.handlers
+EventHandlers {
+  _initial: [],
+  before: [],
+  on: [ { on: 'codejam', handler: [Function: log] } ],
+  after: [],
+  _error: []
+}
+```
+
+but more importantly, what will happen now?
+
+👉 Try sending another message:
+
+```javascript
+await srv.send('codejam', { before: 'reCAP' })
 ```
 
 We see this:
 
 ```log
-[cds.plugins] - fetched plugins in: 22.209ms
-[cds.plugins] - loading @sap/cds-fiori: {
-  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
-}
-[cds.plugins] - loading @cap-js/sqlite: {
-  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
-}
-[cds.plugins] - loaded plugins in: 3.791ms
+Request { method: 'codejam', data: { before: 'reCAP' } } [AsyncFunction: next]
 ```
 
-Hmm. It's essentially the same output as before.
-
-Where's our plugin?
-
-Well, we should know now that it's only loaded when defined as a dependency.
-
-👉 So let's do that now (in a separate terminal, in `proj-03/` of course):
-
-```bash
-npm add flags
-```
-
-Assuming your CAP server is still running, the restart should now emit this:
-
-```log
-[cds.plugins] - fetched plugins in: 3.949ms
-[cds.plugins] - loading @sap/cds-fiori: {
-  impl: 'node_modules/@sap/cds-fiori/cds-plugin.js'
-}
-[cds.plugins] - loading flags: {
-  impl: 'flags/cds-plugin.js'
-}
-[flags] - Starting up ...
-[cds.plugins] - loading @cap-js/sqlite: {
-  impl: 'node_modules/@cap-js/sqlite/cds-plugin.js'
-}
-[cds.plugins] - loaded plugins in: 5.452ms
-```
-
-Success!
-
-### Switch the logging to debug level
-
-So that we don't see the 'Starting up ...' all the time, let's change the log
-level for that.
-
-👉 Do that by using `log.debug` in `flags/cds-plugin.js` instead, like this:
-
-```javascript
-const cds = require('@sap/cds')
-const log = cds.log('flags')
-log.debug('Starting up ...')
-```
-
-## Add our custom annotation to an element
-
-We want our plugin to replace country names with flag emojis, for elements
-annotated with `@flagify`. So let's add this annotation to the supplier's
-country in our model, and then we have something to look for in terms of
-schema (metadata) exploration, which is what our plugin will need to do too.
-
-Annotate the `Country` element of the `Suppliers` entity projection in the
-`Main` service with `@flagify` using a directive like this, in a new file
-called `srv/annotations.cds`:
-
-```cds
-using Main from './main';
-
-annotate Main.Suppliers : Country with @flagify;
-```
-
-> Rather than annotate the entity at the schema level, this annotation is
-> deliberately at the service definition level, meaning we have the chance to
-> have a further projection on the `Suppliers` entity where this annotation is
-> not present.
-
-### Check how the annotation is stored
-
-This annotation is stored simply alongside the rest of the attributes of the
-element. We can check this by having a quick look at the CSN.
-
-👉 Compile the model and extract the definition of the elements for this
-entity:
-
-```bash
-cds compile srv \
-  | jq '.definitions["Main.Suppliers"].elements'
-```
-
-<details>
-<summary>Windows (PowerShell / cmd)</summary>
-
-The pipe and `jq` work the same; just drop the bash line-continuation `\` and
-put it on one line (single quotes around the `jq` filter are fine in
-PowerShell, but use double quotes in cmd):
-
-PowerShell:
-
-```powershell
-cds compile srv | jq '.definitions["Main.Suppliers"].elements'
-```
-
-cmd:
-
-```cmd
-cds compile srv | jq ".definitions[\"Main.Suppliers\"].elements"
-```
-
-</details>
-
-This should emit something like this:
-
-```json
-{
-  "SupplierID": {
-    "key": true,
-    "type": "cds.Integer"
-  },
-  "CompanyName": {
-    "type": "cds.String"
-  },
-  "City": {
-    "type": "cds.String"
-  },
-  "Country": {
-    "@flagify": true,
-    "type": "cds.String"
-  },
-  "Products": {
-    "type": "cds.Association",
-    "...": "..."
-  }
-}
-```
-
-The annotation is just another key in the properties of the `Country` element.
-Neat!
-
-## Implement the plugin logic
-
-Now the plugin exists in its basic form, and is wired up, it's time to add the
-implementation. The power of plugins and what we can do here comes from the
-introspection facilities that are available to us via the CDS facade.
-
-We can look at the definitions in our model and identify the particular parts
-that we want our plugin to manipulate or otherwise operate on.
-
-For our simple plugin here, the approach is:
-
-- wait for the services to be compiled and the server to be bootstrapped
-- look through the services and pick out those that are relevant (application
-  services, effectively)
-- for each service, work through the entities, and:
-- if any entity has elements annotated with `@flagify`, then we want to add a
-  handler to the "after" phase for reads on that entity (see [Further
-  info](#further-info))
-- this handler should process each record in the result set and make
-  appropriate modifications to the values of those elements that have been
-  annotated
-
-### Add the country flag values
-
-The appropriate modifications here are to replace country names with their
-flags, so let's start with that.
-
-👉 Create a file `flags/flags.json` with this content:
-
-```json
-{
-  "Australia": "🇦🇺",
-  "Brazil": "🇧🇷",
-  "Canada": "🇨🇦",
-  "Denmark": "🇩🇰",
-  "Finland": "🇫🇮",
-  "France": "🇮🇹",
-  "Germany": "🇩🇪",
-  "Italy": "🇮🇹",
-  "Japan": "🇯🇵",
-  "Netherlands": "🇳🇱",
-  "Singapore": "🇸🇬",
-  "Spain": "🇪🇸",
-  "Sweden": "🇸🇪",
-  "UK": "🇬🇧",
-  "USA": "🇺🇸"
-}
-```
-
-👉 Now make sure this is loaded in the `flags/cds-plugin.js` file and add some
-debug log output:
-
-```javascript
-const cds = require('@sap/cds')
-const flags = require('./flags')
-const log = cds.log('flags')
-log.debug('Starting up ...')
-log.debug(`Flags available for ${Object.keys(flags).length} countries`)
-```
-
-### Define some helper functions
-
-To assist with our introspection, let's next define a handful of helper
-functions, all predicate functions (and one of which is partially applied, see
-[Further info](#further-info)).
-
-👉 Add these definitions straight after the `log.debug` statements:
-
-```javascript
-const isAppService = x => x.kind == 'app-service'
-const isAnnotatedWith = a => x => x[a]
-const isFlagified = isAnnotatedWith('@flagify')
-```
-
-Because of how beautifully annotations are stored, we are able to define a
-simple higher order function `isAnnotatedWith` that can be used to construct more
-specific functions (such as `isFlagified`) by partially applying it.
-
-### Define the main plugin behaviour
-
-Now it's time for the core part of our plugin.
-
-The CDS facade emits a one-time `served` event once all services have been
-bootstrapped and are ready, so let's first specify that our logic should be
-invoked then.
-
-👉 Add this wrapper after the debug logs in `flags/cds-plugin.js`, along with the
-logic within it:
-
-```javascript
-cds.once('served', _ => {
-
-  const services = [...cds.services].filter(isAppService)
-
-  services.forEach(s => {
-    [...s.entities].forEach(en => {
-      if ([...en.elements].some(isFlagified)) {
-        s.after('READ', en.name, (records, req) => {
-          const flagified = [...req.target.elements].filter(isFlagified)
-          records.forEach(r =>
-            flagified.forEach(el => r[el.name] = flags[r[el.name]] || r[el.name])
-          )
-        })
-      }
-    })
-  })
-
-})
-```
-
-While most of this logic is explained in part 3 of the CAP Node.js Plugins
-series (see [Further info](#further-info)), it's worth spending a few moments
-staring at this to understand what is being done:
-
-- the application services are identified (`Main`)
-- for each of these application services:
-  - the entities are examined one by one (`Products`, `Suppliers`, `Categories`)
-  - if any of the elements of the entity currently being examined have been
-    annotated with `@flagify`, then:
-  - a handler for the `after` phase of reading the given entity is added
-  - that handler checks the annotated elements and works through the records,
-    substituting a flag emoji where appropriate and if possible
-
-That's about it!
-
-## Try the plugin out
-
-👉 Now that we have everything we need, make a request to the `Suppliers`
-entity (remember we added the `@flagify` annotation to this entity's `Country`
-element):
-
-<http://localhost:4004/northwhisper/Suppliers?$top=5>
-
-You should see the entityset, complete with flag emojis for the countries:
-
-![screenshot of the first 5 suppliers, with flag emojis](assets/suppliers-with-flags.png)
-
-> [!NOTE]
-> On Windows, the flag emojis likely won't render as flags in most browsers —
-> you'll see two-letter country codes (e.g. `US`, `GB`) or generic boxes
-> instead. This is a Windows limitation, not a problem with the plugin: the
-> default Windows emoji font (Segoe UI Emoji) doesn't include glyphs for the
-> regional-indicator flag emojis. **Firefox is the exception** — it ships its own
-> emoji font (Twemoji Mozilla) rather than relying on the OS, so flags display
-> correctly there. The data returned by the service is identical regardless of
-> browser; only the on-screen rendering differs.
-
-What's more, because this entire feature is packaged up in a plugin, we can
-simply turn it off again at the package dependency level.
-
-👉 Try that now, by removing the dependency:
-
-```bash
-npm remove flags
-```
-
-Now a re-request of the same resource will return an entityset with regular
-country names.
-
-Well done!
+What we see here are two arguments that the handler received:
+
+- a `Request` object with the message payload
+- a `next` function to enable the calling of any further handlers in the
+  interceptor stack
+
+> For more on further handlers, the interceptor stack, and - crucially - the
+> difference between synchronous request/response style messages and
+> asynchronous events (reflected in the difference between `srv.send` and
+> `srv.emit`), see the [Creating a service from
+> scratch](https://qmacro.org/blog/posts/2025/07/21/a-recap-intro-to-the-cds-repl/#creating-a-service-from-scratch)
+> section of [A reCAP intro to the cds
+> REPL](https://qmacro.org/blog/posts/2025/07/21/a-recap-intro-to-the-cds-repl/).
+
+There's so much more to explore in the cds REPL, but we'll finish here. Well
+done!
 
 ## Further info
 
-- A deep dive into what causes plugins to be loaded, and from where, is
-  available in the blog post [CAP Node.js plugins - part 1 - how things
-  work](https://qmacro.org/blog/posts/2024/10/05/cap-node-js-plugins-part-1-how-things-work/).
-- The logic in this plugin is explained in more detail in [CAP Node.js plugins -
-  part 3 - writing our
-  own](http://localhost:5005/blog/posts/2025/01/17/cap-node-js-plugins-part-3-writing-our-own/).
-- The [CDS Plugin Packages](https://cap.cloud.sap/docs/node.js/cds-plugins)
-  topic has a section on `cds-plugin.js`.
-- Learn more about [NPM
-  Workspaces](https://docs.npmjs.com/cli/v11/using-npm/workspaces).
-- Learn about the different phases, or hooks: [on, before,
-  after](https://cap.cloud.sap/docs/guides/services/custom-code#hooks-on-before-after).
-- There are different [lifecycle
-  events](https://cap.cloud.sap/docs/node.js/cds-server#lifecycle-events)
-  emitted via the CDS facade, one of which is `served`.
-- The blog post [Point free coding and function
-  composition](https://qmacro.org/blog/posts/2025/05/15/point-free-coding-and-function-composition/)
-  may help to provide some background to the types of functions defined as
-  helpers here.
+- The [Wikipedia article on the
+  REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) has
+  some great background and history.
+- The [cds Façade Object](https://cap.cloud.sap/docs/node.js/cds-facade) topic
+  in Capire has a great overview.
+- [LinkedDefinitions](https://cap.cloud.sap/docs/node.js/cds-reflect#iterable)
+  is an iterable which is used to store all objects of a linked model.
+- The [Core Services](https://cap.cloud.sap/docs/node.js/core-services) topic
+  in Capire provides comprehensive coverage of the various query contexts and
+  construction mechanisms (including
+  [REST-style](https://cap.cloud.sap/docs/node.js/core-services#rest-style-api)
+  and
+  [CRUD-style](https://cap.cloud.sap/docs/node.js/core-services#crud-style-api)
+  APIs). It also covers `cds.Service` and `cds.ApplicationService`.
+- Capire's [Querying in JavaScript](https://cap.cloud.sap/docs/node.js/cds-ql)
+  topic has a wealth of information that goes far beyond what we've covered in
+  this exercise.
+
+## Footnotes
+
+1. The co-founder of Microsoft, Paul Allen, on arriving at MITS in Albuquerque
+   NM in March 1975 to demonstrate the BASIC interpreter that he and Bill Gates
+   had worked on and were hoping to license, loads the code from the paper tape
+   into the ALTAIR 8800 and at the BASIC prompt that appears, types `PRINT 2 +
+   2`. This also appears subsequently as an example in the Introduction section
+   of the [MITS ALTAIR
+   BASIC](https://deramp.com/downloads/mfe_archive/010-S100%20Computers%20and%20Boards/00-MITS/40-Software/BASIC/Altair%20BASIC%203.0/Documentation/Altair_8800_BASIC_Reference_Manual_1975.pdf)
+   manual. See the article [MITS licenses Altair BASIC from Bill Gates and Paul
+   Allen](https://www.computinghistory.org.uk/det/5946/Bill-Gates-and-Paul-Allen-sign-a-licensing-agreement-with-MITS/)
+   from the Centre for Computing History.
+1. This is either a reference to a classic scene in [Spinal
+   Tap](https://en.wikipedia.org/wiki/Up_to_eleven), or [yet another
+   Schnapszahl](https://www.google.com/search?q=site%3Aqmacro.org+schnapszahl).
+1. MDN is a great resource, and has a section on JavaScript's [Spread syntax
+   (...)](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax).
+1. The beauty of JavaScript is in evidence here - handlers are provided as
+   functions (as `srv.on` is a [higher order
+   function](https://en.wikipedia.org/wiki/Higher-order_function) which takes a
+   handler function as one of its arguments, and `console.log` is a function, and
+   thus perfectly valid to provide here.
