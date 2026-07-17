@@ -740,6 +740,8 @@ to understand what's going on (see [Further info](#further-info)).
 
 ## Further info
 
+- Creator Simon Engel gave a great session on [Status-transition
+  flows](https://www.youtube.com/watch?v=1XolXCjN5IQ) during Devtoberfest 2025
 - The Fitout Pontoon's page on [Engine
   Controls](https://www.thefitoutpontoon.co.uk/engines-drive-gear/controls/)
   has an overview of Morse lever controls.
