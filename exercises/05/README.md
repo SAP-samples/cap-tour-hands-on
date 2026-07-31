@@ -63,7 +63,7 @@ centre (neutral)._
 add this:
 
 ```cds
-context codejam {
+context narrowboat {
 
   type Position : String enum {
     Forward;
@@ -79,7 +79,7 @@ context codejam {
 
 service Morse {
 
-  entity Controls as projection on codejam.Controls
+  entity Controls as projection on narrowboat.Controls
 
     actions {
       action engageForward();
@@ -498,7 +498,7 @@ This should emit something like this, where the `@readonly` annotation is eviden
     "type": "cds.Integer"
   },
   "position": {
-    "type": "codejam.Position",
+    "type": "narrowboat.Position",
     "default": {
       "#": "Neutral",
       "val": "Neutral"
